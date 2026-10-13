@@ -1,0 +1,23 @@
+# Temporary session and runtime logs
+siguru_sessions/
+*.tmp
+*.log
+cookie.txt
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test backup files
+*.testbackup
+
+# Ensure SQLite default DB is tracked so it works out of the box when cloned
+!database/siguru.db
+!database/schema.sql
+
+# Uploads directory placeholders
+uploads/photos/*
+!uploads/photos/.gitkeep
+uploads/documents/*
+!uploads/documents/.gitkeep

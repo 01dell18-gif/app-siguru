@@ -1,0 +1,883 @@
+/* ==========================================================================
+   assets/css/style.css - Desain Minimalis & Modern Kompak SiGuru
+   (Clean, Modern, Compact Spacing untuk Seluruh Menu & Halaman)
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #4361ee;
+  --primary-hover: #3651d4;
+  --primary-light: #eef2ff;
+  --secondary: #64748b;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --purple: #8b5cf6;
+  --sidebar-width: 260px;
+  --navbar-height: 56px;
+  --bg-body: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 0.865rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #0f172a;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Scrollbar Minimalis */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   Top Navbar
+   ========================================================================== */
+.main-header {
+  height: var(--navbar-height);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-header.navbar-hidden {
+  transform: translateY(-100%);
+}
+
+.main-header.scrolled {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* ==========================================================================
+   Sidebar Navigation
+   ========================================================================== */
+.main-sidebar {
+  width: var(--sidebar-width);
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1030;
+  background: #0f172a;
+  color: #f8fafc;
+  overflow-y: auto;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-brand {
+  height: var(--navbar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 1.15rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-menu {
+  padding: 0.65rem 0.55rem;
+}
+
+.menu-category {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  padding: 0.65rem 0.65rem 0.2rem;
+}
+
+.nav-link-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.48rem 0.75rem;
+  border-radius: 6px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.83rem;
+  transition: all 0.15s ease;
+  margin-bottom: 2px;
+}
+
+.nav-link-custom:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.nav-link-custom.active {
+  background: rgba(67, 97, 238, 0.18);
+  color: #ffffff;
+  font-weight: 600;
+  border-left: 3px solid var(--primary);
+}
+
+.nav-link-custom i {
+  font-size: 0.95rem;
+  width: 18px;
+  text-align: center;
+  color: #64748b;
+}
+
+.nav-link-custom:hover i,
+.nav-link-custom.active i {
+  color: #818cf8;
+}
+
+.sidebar-accordion .accordion-button {
+  background: transparent !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  padding: 0.48rem 0.75rem;
+  font-size: 0.83rem;
+  font-weight: 500;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+}
+
+.sidebar-accordion .accordion-button:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #f8fafc !important;
+}
+
+.sidebar-accordion .accordion-button.active-parent {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.sidebar-accordion .accordion-button::after {
+  display: none !important;
+}
+
+.sidebar-chevron {
+  font-size: 0.72rem;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.sidebar-accordion .accordion-button:not(.collapsed) .sidebar-chevron {
+  transform: rotate(180deg);
+  color: #ffffff;
+}
+
+.sidebar-accordion .accordion-body {
+  padding: 0.2rem 0 0.35rem 0.5rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  margin-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-accordion .accordion-body .nav-link-custom {
+  padding: 0.38rem 0.65rem;
+  font-size: 0.81rem;
+  color: #94a3b8;
+  border-radius: 6px;
+  margin-bottom: 1px;
+}
+
+.sidebar-accordion .accordion-body .nav-link-custom:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-accordion .accordion-body .nav-link-custom.active {
+  color: #ffffff;
+  background: rgba(67, 97, 238, 0.2);
+  font-weight: 600;
+  border-left: 2px solid var(--primary);
+}
+
+.sidebar-user-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.15s ease;
+}
+
+.sidebar-user-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ==========================================================================
+   Content Area Wrapper (Kompak & Rapi)
+   ========================================================================== */
+.content-wrapper {
+  margin-left: var(--sidebar-width);
+  min-height: calc(100vh - var(--navbar-height));
+  padding: 1.15rem 1.35rem;
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.sidebar-collapsed .main-sidebar {
+  transform: translateX(-100%);
+}
+body.sidebar-collapsed .main-header,
+body.sidebar-collapsed .content-wrapper {
+  margin-left: 0 !important;
+}
+
+@media (max-width: 991.98px) {
+  .main-header, .content-wrapper {
+    margin-left: 0;
+  }
+  .main-sidebar {
+    transform: translateX(-100%);
+  }
+  .main-sidebar.show {
+    transform: translateX(0);
+  }
+  .content-wrapper {
+    padding: 0.85rem;
+  }
+}
+
+/* Global Page Header Title Margins */
+.content-wrapper > .d-flex.mb-4,
+.content-wrapper > .d-flex.mb-3 {
+  margin-bottom: 0.75rem !important;
+}
+
+.content-wrapper h4,
+.content-wrapper h4.fw-bold,
+.content-wrapper h3,
+.content-wrapper h3.fw-bold {
+  font-size: 1.15rem !important;
+  margin-bottom: 0.15rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.content-wrapper p.text-muted.small.mb-0 {
+  font-size: 0.78rem !important;
+}
+
+/* ==========================================================================
+   Kartu Konten Minimalis (.card, .card-table)
+   ========================================================================== */
+.card-table,
+.card {
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  margin-bottom: 0.75rem !important;
+}
+
+.card.p-4,
+.card-table.p-4 {
+  padding: 0.85rem 1.15rem !important;
+}
+
+.card.p-3,
+.card-table.p-3 {
+  padding: 0.75rem 1rem !important;
+}
+
+.card.mb-4,
+.card-table.mb-4 {
+  margin-bottom: 0.75rem !important;
+}
+
+.card-table:hover,
+.card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Header Kartu Minimalis */
+.card-header-clean {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.card-title-clean {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* ==========================================================================
+   Stat Cards (Dashboard Kompak)
+   ========================================================================== */
+.stat-card {
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  padding: 0.85rem 1rem !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.stat-icon {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 7px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem !important;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Tabel Minimalis Modern (.table-custom, .table)
+   ========================================================================== */
+.table-custom,
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0 !important;
+}
+
+.table-custom th,
+.table th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 0.74rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  border-top: none !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 0.55rem 0.75rem !important;
+  white-space: nowrap !important;
+}
+
+.table-custom td,
+.table td {
+  padding: 0.55rem 0.75rem !important;
+  vertical-align: middle !important;
+  border-top: none !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  font-size: 0.83rem !important;
+  color: #334155 !important;
+}
+
+.table-custom tbody tr:hover td,
+.table tbody tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   Kontrol Form & Filter (.form-control, .form-select)
+   ========================================================================== */
+.form-label {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  margin-bottom: 0.25rem !important;
+  display: block;
+}
+
+.form-control,
+.form-select {
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  padding: 0.38rem 0.65rem !important;
+  font-size: 0.84rem !important;
+  color: #1e293b !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.12) !important;
+  outline: none !important;
+}
+
+.form-control-sm,
+.form-select-sm {
+  border-radius: 5px !important;
+  padding: 0.28rem 0.55rem !important;
+  font-size: 0.78rem !important;
+}
+
+.input-group {
+  border-radius: 6px;
+}
+.input-group-text {
+  border: 1px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  font-size: 0.83rem !important;
+  padding: 0.38rem 0.65rem !important;
+}
+.input-group-sm .input-group-text {
+  padding: 0.28rem 0.55rem !important;
+  font-size: 0.78rem !important;
+}
+
+.input-group > .form-control:not(:last-child),
+.input-group > .form-select:not(:last-child),
+.input-group > .input-group-text:not(:last-child),
+.input-group > .btn:not(:last-child) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.input-group > .form-control:not(:first-child),
+.input-group > .form-select:not(:first-child),
+.input-group > .input-group-text:not(:first-child),
+.input-group > .btn:not(:first-child) {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.btn-toggle-password {
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+  background-color: #f8fafc !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+}
+
+.btn-toggle-password:hover,
+.btn-toggle-password:focus {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* ==========================================================================
+   Tombol (.btn)
+   ========================================================================== */
+.btn {
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  padding: 0.38rem 0.85rem !important;
+  font-size: 0.82rem !important;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  line-height: 1.4;
+}
+
+.btn-sm {
+  padding: 0.26rem 0.65rem !important;
+  font-size: 0.76rem !important;
+  border-radius: 5px !important;
+}
+
+.btn-pill,
+.rounded-pill {
+  border-radius: 9999px !important;
+  padding-left: 0.85rem !important;
+  padding-right: 0.85rem !important;
+}
+
+.btn-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+  color: #ffffff !important;
+}
+
+.btn-light {
+  background-color: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  color: #334155 !important;
+}
+.btn-light:hover {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Page Header Action Buttons Modern Minimalist */
+.content-wrapper > .d-flex .btn.rounded-pill,
+.content-wrapper .card-table .btn.rounded-pill:not(.btn-bukti) {
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  padding: 0.35rem 0.75rem !important;
+}
+
+/* Action buttons in tables (Master Guru, Murid, Ekstra, User Management) - KHUSUS TOMBOL ICON AKSI */
+.table td .btn.btn-icon,
+.table td .btn.btn-sm.btn-icon,
+.table td button.btn-sm:not(.btn-bukti) {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  box-shadow: none !important;
+  border: 1px solid var(--border-color) !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  transition: all 0.15s ease;
+}
+
+/* Khusus Tombol Bukti / Dokumen di Seluruh Tabel Laporan (Menyesuaikan Dinamis, Padding & Margin Enak Dilihat) */
+.btn-bukti,
+.table td .btn-bukti,
+.table td a.btn-bukti,
+.table td a.btn-outline-info {
+  width: auto !important;
+  min-width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  padding: 4px 12px !important;
+  margin: 1px 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  border-radius: 9999px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  white-space: nowrap !important;
+  color: #0284c7 !important;
+  background-color: #f0f9ff !important;
+  border: 1px solid #7dd3fc !important;
+  text-decoration: none !important;
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.08) !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.btn-bukti:hover,
+.table td .btn-bukti:hover,
+.table td a.btn-bukti:hover,
+.table td a.btn-outline-info:hover {
+  background-color: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+.btn-bukti i,
+.table td .btn-bukti i,
+.table td a.btn-outline-info i {
+  font-size: 0.9rem !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+}
+
+.table td .btn.btn-outline-primary {
+  color: #3b82f6 !important;
+  border-color: #e2e8f0 !important;
+  background-color: #ffffff !important;
+}
+.table td .btn.btn-outline-primary:hover {
+  background-color: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+}
+
+.table td .btn.btn-outline-danger {
+  color: #ef4444 !important;
+  border-color: #e2e8f0 !important;
+  background-color: #ffffff !important;
+}
+.table td .btn.btn-outline-danger:hover {
+  background-color: #fef2f2 !important;
+  border-color: #ef4444 !important;
+  color: #dc2626 !important;
+}
+
+.table td .btn.disabled,
+.table td .btn:disabled {
+  opacity: 0.45 !important;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Widget Tanggal & Waktu Real-Time Header (Kompak, Proporsional, Auto-Fit)
+   ========================================================================== */
+.header-clock-widget {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  padding: 4px 12px !important;
+  min-height: 36px !important;
+  height: auto !important;
+  width: auto !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  margin-right: 8px !important;
+  box-sizing: border-box !important;
+}
+.header-clock-widget .clock-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+}
+.header-clock-widget .clock-row i {
+  font-size: 0.72rem !important;
+  color: #2563eb !important;
+  width: 14px !important;
+  text-align: center !important;
+  flex-shrink: 0 !important;
+}
+.header-clock-widget .clock-date {
+  font-size: 0.74rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  letter-spacing: -0.01em !important;
+}
+.header-clock-widget .clock-time {
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  font-family: var(--bs-font-monospace, monospace) !important;
+  color: #0f172a !important;
+  letter-spacing: 0.03em !important;
+}
+
+/* ==========================================================================
+   Badges & Tags Interaktif
+   ========================================================================== */
+.badge {
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  padding: 0.22rem 0.55rem !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.02em;
+}
+
+.badge.rounded-pill {
+  border-radius: 9999px !important;
+  padding: 0.22rem 0.65rem !important;
+}
+
+.bg-primary-subtle { background-color: #eff6ff !important; color: #2563eb !important; border: 1px solid #dbeafe !important; }
+.bg-success-subtle { background-color: #f0fdf4 !important; color: #16a34a !important; border: 1px solid #dcfce7 !important; }
+.bg-warning-subtle { background-color: #fffbeb !important; color: #d97706 !important; border: 1px solid #fef3c7 !important; }
+.bg-danger-subtle  { background-color: #fef2f2 !important; color: #dc2626 !important; border: 1px solid #fee2e2 !important; }
+.bg-info-subtle    { background-color: #f0f9ff !important; color: #0284c7 !important; border: 1px solid #e0f2fe !important; }
+.bg-secondary-subtle { background-color: #f8fafc !important; color: #64748b !important; border: 1px solid #e2e8f0 !important; }
+.bg-dark-subtle    { background-color: #f1f5f9 !important; color: #334155 !important; border: 1px solid #cbd5e1 !important; }
+
+/* Minimalist Alerts */
+.alert {
+  border-radius: 8px !important;
+  padding: 0.65rem 0.95rem !important;
+  font-size: 0.82rem !important;
+  border: 1px solid transparent !important;
+  margin-bottom: 0.75rem !important;
+}
+.alert-success { background-color: #f0fdf4 !important; border-color: #bbf7d0 !important; color: #166534 !important; }
+.alert-danger { background-color: #fef2f2 !important; border-color: #fecaca !important; color: #991b1b !important; }
+.alert-warning { background-color: #fffbeb !important; border-color: #fde68a !important; color: #92400e !important; }
+.alert-info { background-color: #f0f9ff !important; border-color: #bae6fd !important; color: #075985 !important; }
+
+.tag-chip,
+.badge-chip {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.tag-chip:hover,
+.badge-chip:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.tag-chip .btn-remove-chip,
+.badge-chip .btn-remove-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.tag-chip .btn-remove-chip:hover,
+.badge-chip .btn-remove-chip:hover {
+  color: #ef4444;
+}
+
+/* Attendance Badges */
+.badge-hadir { background: #d1fae5; color: #065f46; }
+.badge-izin { background: #fef3c7; color: #92400e; }
+.badge-sakit { background: #dbeafe; color: #1e40af; }
+.badge-alpha { background: #fee2e2; color: #991b1b; }
+.badge-dispen { background: #ede9fe; color: #5b21b6; }
+
+/* Student Avatar */
+.student-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+/* ==========================================================================
+   Modals (Kompak)
+   ========================================================================== */
+.modal-content {
+  border-radius: 8px !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+}
+
+.modal-header {
+  padding: 0.65rem 1rem !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.modal-title {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+}
+
+.modal-body {
+  padding: 1rem !important;
+}
+
+.modal-footer {
+  padding: 0.65rem 1rem !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+/* ==========================================================================
+   Pagination (Kompak)
+   ========================================================================== */
+.pagination {
+  margin-bottom: 0 !important;
+  gap: 3px !important;
+}
+
+.page-link {
+  padding: 0.25rem 0.55rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+  color: #475569 !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+}
+
+/* Segmented Attendance Control */
+.segmented-absen {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 2px;
+  border-radius: 6px;
+  gap: 2px;
+}
+.segmented-absen input[type="radio"] { display: none; }
+.segmented-absen label {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0;
+  color: #64748b;
+}
+.segmented-absen input[value="H"]:checked + label { background: #10b981; color: #fff; }
+.segmented-absen input[value="I"]:checked + label { background: #f59e0b; color: #fff; }
+.segmented-absen input[value="S"]:checked + label { background: #3b82f6; color: #fff; }
+.segmented-absen input[value="A"]:checked + label { background: #ef4444; color: #fff; }
+.segmented-absen input[value="D"]:checked + label { background: #8b5cf6; color: #fff; }
+
+/* WhatsApp Clickable Link Styling */
+a.text-success:hover {
+  text-decoration: underline !important;
+  color: #059669 !important;
+}
+
+/* Print & PDF Layout Styling */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .no-print, .main-sidebar, .main-header, .btn, .pagination, .filter-box { display: none !important; }
+  .content-wrapper { margin-left: 0 !important; padding: 0 !important; }
+  .kop-surat { display: block !important; }
+}
