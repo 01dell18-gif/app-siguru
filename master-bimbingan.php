@@ -59,8 +59,12 @@ if (empty($guruWaliList)) {
     $guruWaliList = $pdo->query("SELECT nama_guru FROM data_guru ORDER BY nama_guru ASC")->fetchAll(PDO::FETCH_COLUMN);
 }
 
-// Ambil daftar murid yang berstatus "Guru Wali" dari DataMurid untuk autofill saat tambah
-$eligibleStudents = $pdo->query("SELECT * FROM data_murid WHERE status LIKE '%Guru Wali%' ORDER BY nama_murid ASC")->fetchAll();
+// Ambil daftar murid yang berstatus "Guru Wali" dari DataMurid yang BELUM terdaftar di data_murid_guru_wali
+$eligibleStudents = $pdo->query("SELECT * FROM data_murid 
+    WHERE (status LIKE '%Guru Wali%' OR status LIKE '%Bimbingan%')
+    AND TRIM(nama_murid) NOT IN (SELECT TRIM(nama_murid) FROM data_murid_guru_wali WHERE nama_murid IS NOT NULL AND nama_murid != '')
+    AND (nisn IS NULL OR nisn = '' OR nisn NOT IN (SELECT nisn FROM data_murid_guru_wali WHERE nisn IS NOT NULL AND nisn != ''))
+    ORDER BY nama_murid ASC")->fetchAll();
 
 // 2. Aksi CRUD
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -86,6 +90,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!empty($nama)) {
+            // Validasi duplikasi: Cek apakah nama atau NISN siswa sudah terdaftar dalam data_murid_guru_wali
+            $chk = $pdo->prepare("SELECT COUNT(*) FROM data_murid_guru_wali WHERE TRIM(nama_murid) = ? OR (nisn != '' AND nisn = ?)");
+            $chk->execute([$nama, $nisn]);
+            if ($chk->fetchColumn() > 0) {
+                setFlash('danger', 'Siswa "' . htmlspecialchars($nama) . '" sudah terdaftar dalam data siswa bimbingan!');
+                header("Location: master-bimbingan.php");
+                exit;
+            }
+
             $stmt = $pdo->prepare("INSERT INTO data_murid_guru_wali (nisn, nama_murid, kelas, jenis_kelamin, foto_murid, guru_wali, no_wa_murid, nama_ortu, kontak_ortu, catatan_khusus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$nisn, $nama, $kelas, $jk, $fotoPath, $guruWali, $noWa, $ortu, $kontakOrtu, $catatan]);
             setFlash('success', 'Data siswa bimbingan berhasil ditambahkan.');
@@ -845,7 +858,11 @@ function initSearchableStudentPicker(config) {
         if (currentList.length === 0) {
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'p-3 text-center text-muted small';
-            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada siswa yang cocok dengan "<b>' + escapeHtml(filterText) + '</b>"';
+            if (students.length === 0) {
+                emptyDiv.innerHTML = '<i class="bi bi-info-circle me-1 text-primary"></i> Semua siswa DataMurid berstatus Guru Wali sudah terdaftar dalam bimbingan.';
+            } else {
+                emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada siswa yang cocok dengan "<b>' + escapeHtml(filterText) + '</b>"';
+            }
             dropdown.appendChild(emptyDiv);
         } else {
             currentList.forEach((st) => {

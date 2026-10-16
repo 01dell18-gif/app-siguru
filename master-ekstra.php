@@ -69,8 +69,12 @@ if ($isTemplate || (isset($_GET['export']) && in_array(strtolower($_GET['export'
     }
 }
 
-// Ambil daftar murid yang berstatus "Ekstra" dari DataMurid untuk autofill saat tambah
-$eligibleStudents = $pdo->query("SELECT * FROM data_murid WHERE status LIKE '%Ekstra%' ORDER BY nama_murid ASC")->fetchAll();
+// Ambil daftar murid yang berstatus "Ekstra" dari DataMurid yang BELUM terdaftar di data_murid_ekstra
+$eligibleStudents = $pdo->query("SELECT * FROM data_murid 
+    WHERE status LIKE '%Ekstra%'
+    AND TRIM(nama_murid) NOT IN (SELECT TRIM(nama_murid) FROM data_murid_ekstra WHERE nama_murid IS NOT NULL AND nama_murid != '')
+    AND (nisn IS NULL OR nisn = '' OR nisn NOT IN (SELECT nisn FROM data_murid_ekstra WHERE nisn IS NOT NULL AND nisn != ''))
+    ORDER BY nama_murid ASC")->fetchAll();
 
 // 2. Aksi CRUD POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -95,6 +99,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!empty($nama) && !empty($postEkstra)) {
+            // Validasi duplikasi: Cek apakah nama atau NISN siswa sudah terdaftar dalam data_murid_ekstra
+            $chk = $pdo->prepare("SELECT COUNT(*) FROM data_murid_ekstra WHERE TRIM(nama_murid) = ? OR (nisn != '' AND nisn = ?)");
+            $chk->execute([$nama, $nisn]);
+            if ($chk->fetchColumn() > 0) {
+                setFlash('danger', 'Siswa "' . htmlspecialchars($nama) . '" sudah terdaftar dalam data siswa ekstrakurikuler! Jika ingin menambahkan cabang ekstra lain, silakan gunakan fitur Edit pada siswa tersebut.');
+                header("Location: master-ekstra.php");
+                exit;
+            }
+
             $stmt = $pdo->prepare("INSERT INTO data_murid_ekstra (nisn, nama_murid, jenis_kelamin, kelas, nama_ekstra) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$nisn, $nama, $jk, $kelas, $postEkstra]);
             setFlash('success', 'Siswa berhasil didaftarkan ke kegiatan ekstrakurikuler.');
@@ -664,7 +677,11 @@ function initSearchableStudentPicker(config) {
         if (currentList.length === 0) {
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'p-3 text-center text-muted small';
-            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada siswa yang cocok dengan "<b>' + escapeHtml(filterText) + '</b>"';
+            if (students.length === 0) {
+                emptyDiv.innerHTML = '<i class="bi bi-info-circle me-1 text-primary"></i> Semua siswa DataMurid berstatus Ekstra sudah terdaftar sebagai anggota ekstrakurikuler.';
+            } else {
+                emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada siswa yang cocok dengan "<b>' + escapeHtml(filterText) + '</b>"';
+            }
             dropdown.appendChild(emptyDiv);
         } else {
             currentList.forEach((st) => {

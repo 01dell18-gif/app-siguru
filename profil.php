@@ -533,54 +533,77 @@ $hasCustomPhoto = !empty($userProfile['foto']);
                             </label>
                             
                             <div class="p-3 bg-light rounded-3 border">
-                                <!-- Mode Switch Buttons -->
-                                <div class="mb-3">
-                                    <div class="btn-group w-100 p-1 bg-white rounded-pill border shadow-xs" role="group">
+                                <!-- Mode Switch Buttons (Sesuai Desain Formulir Lain) -->
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                    <span class="small text-muted fw-semibold"><i class="bi bi-sliders2 me-1"></i>Pilih Metode:</span>
+                                    <div class="btn-group btn-group-sm p-1 bg-white border rounded-pill shadow-xs" role="group">
                                         <input type="radio" class="btn-check" name="form_photo_method" id="fpm_keep" value="keep" checked onchange="switchFormPhotoMethod('keep')">
-                                        <label class="btn btn-sm rounded-pill fw-semibold" for="fpm_keep">Tetap (Gunakan Saat Ini)</label>
+                                        <label class="btn btn-sm btn-outline-primary border-0 rounded-pill px-3 py-1 fw-semibold" for="fpm_keep">
+                                            Tetap (Gunakan Saat Ini)
+                                        </label>
 
                                         <input type="radio" class="btn-check" name="form_photo_method" id="fpm_upload" value="upload" onchange="switchFormPhotoMethod('upload')">
-                                        <label class="btn btn-sm rounded-pill fw-semibold" for="fpm_upload"><i class="bi bi-upload me-1"></i> Upload Berkas</label>
+                                        <label class="btn btn-sm btn-outline-primary border-0 rounded-pill px-3 py-1 fw-semibold" for="fpm_upload">
+                                            <i class="bi bi-cloud-arrow-up me-1"></i> Upload Berkas
+                                        </label>
 
                                         <input type="radio" class="btn-check" name="form_photo_method" id="fpm_url" value="url" onchange="switchFormPhotoMethod('url')">
-                                        <label class="btn btn-sm rounded-pill fw-semibold" for="fpm_url"><i class="bi bi-link-45deg me-1"></i> Tautan URL</label>
+                                        <label class="btn btn-sm btn-outline-primary border-0 rounded-pill px-3 py-1 fw-semibold" for="fpm_url">
+                                            <i class="bi bi-link-45deg me-1"></i> Tautan URL
+                                        </label>
                                     </div>
                                 </div>
 
                                 <div class="d-flex flex-wrap align-items-center gap-3">
-                                    <div class="rounded-circle overflow-hidden shadow-xs border bg-white d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; flex-shrink: 0;">
+                                    <div class="rounded-circle overflow-hidden shadow-xs border bg-white d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; flex-shrink: 0; border-width: 2px !important; border-color: #3b82f6 !important;">
                                         <?php if ($hasCustomPhoto): ?>
                                             <img id="formFotoPreview" src="<?= htmlspecialchars(formatPhotoUrl($userProfile['foto'])) ?>" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
-                                            <div id="formFotoInitial" class="fw-bold text-primary" style="font-size: 1.5rem; display: none;">
+                                            <div id="formFotoInitial" class="fw-bold text-primary" style="font-size: 1.6rem; display: none;">
                                                 <?= strtoupper(substr($userProfile['nama'] ?: 'U', 0, 1)) ?>
                                             </div>
                                         <?php else: ?>
-                                            <div id="formFotoInitial" class="fw-bold text-primary" style="font-size: 1.5rem;">
+                                            <div id="formFotoInitial" class="fw-bold text-primary" style="font-size: 1.6rem;">
                                                 <?= strtoupper(substr($userProfile['nama'] ?: 'U', 0, 1)) ?>
                                             </div>
                                             <img id="formFotoPreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
                                         <?php endif; ?>
                                     </div>
 
-                                    <div class="flex-grow-1" style="min-width: 220px;">
+                                    <div class="flex-grow-1" style="min-width: 240px;">
                                         <!-- Box Keep -->
-                                        <div id="fpm_box_keep" class="small text-muted py-1">
-                                            <i class="bi bi-info-circle text-primary me-1"></i> <?= $hasCustomPhoto ? 'Foto profil saat ini tetap dipertahankan.' : 'Saat ini akun menggunakan inisial nama. Pilih Upload Berkas atau Tautan URL untuk memasang foto.' ?>
+                                        <div id="fpm_box_keep" class="small text-muted py-2 bg-white rounded-3 px-3 border shadow-xs">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-info-circle-fill text-primary fs-6"></i>
+                                                <div>
+                                                    <div class="fw-semibold text-dark"><?= $hasCustomPhoto ? 'Foto Profil Saat Ini Tetap Dipertahankan' : 'Menggunakan Inisial Nama Akun' ?></div>
+                                                    <div class="text-secondary" style="font-size: 0.76rem;">
+                                                        <?= $hasCustomPhoto ? 'Foto profil kustom Anda tidak akan diubah saat profil disimpan. Klik "Upload Berkas" atau "Tautan URL" jika ingin mengganti foto.' : 'Klik opsi "Upload Berkas" atau "Tautan URL" di atas untuk memasang foto profil Anda.' ?>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <!-- Box Upload -->
                                         <div id="fpm_box_upload" class="d-none">
-                                            <input type="file" name="foto_profil" id="inputFotoProfilForm" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImageFile(this, 'formFotoPreview', 'formFotoInitial')">
-                                            <div class="form-text small text-muted mb-0" style="font-size: 0.74rem;">
-                                                Pilih file gambar (JPG, PNG, WEBP, GIF, maks. 5 MB) dari perangkat Anda.
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white"><i class="bi bi-file-earmark-arrow-up text-primary"></i></span>
+                                                <input type="file" name="foto_profil" id="inputFotoProfilForm" class="form-control" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImageFile(this, 'formFotoPreview', 'formFotoInitial', 'formFotoUploadInfo')">
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                                <small class="text-muted" style="font-size: 0.74rem;">Format: JPG, JPEG, PNG, WEBP, GIF (Maks. 5 MB).</small>
+                                                <div id="formFotoUploadInfo" class="small"></div>
                                             </div>
                                         </div>
 
                                         <!-- Box URL -->
                                         <div id="fpm_box_url" class="d-none">
-                                            <input type="url" name="form_foto_url" id="inputFotoUrlForm" class="form-control form-control-sm" placeholder="https://drive.google.com/... atau URL gambar web" oninput="previewPhotoUrl(this.value, 'formFotoPreview', 'formFotoInitial')">
-                                            <div class="form-text small text-muted mb-0" style="font-size: 0.74rem;">
-                                                Tempelkan link foto Google Drive atau URL gambar langsung.
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white"><i class="bi bi-google text-danger"></i></span>
+                                                <input type="url" name="form_foto_url" id="inputFotoUrlForm" class="form-control" placeholder="https://drive.google.com/... atau URL gambar langsung" oninput="previewPhotoUrl(this.value, 'formFotoPreview', 'formFotoInitial', 'formFotoUrlInfo')">
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                                <small class="text-muted" style="font-size: 0.74rem;">Mendukung tautan foto Google Drive publik atau URL langsung berkas foto.</small>
+                                                <div id="formFotoUrlInfo" class="small"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -714,10 +737,10 @@ $hasCustomPhoto = !empty($userProfile['foto']);
                         <label class="form-label small fw-semibold text-secondary d-block">Pilih Metode Foto</label>
                         <div class="btn-group w-100 p-1 bg-light rounded-pill border" role="group">
                             <input type="radio" class="btn-check" name="photo_method" id="photo_method_upload" value="upload" checked onchange="switchModalPhotoMethod('upload')">
-                            <label class="btn btn-sm rounded-pill fw-semibold" for="photo_method_upload"><i class="bi bi-upload me-1"></i> Upload Berkas</label>
+                            <label class="btn btn-sm btn-outline-primary border-0 rounded-pill fw-semibold" for="photo_method_upload"><i class="bi bi-upload me-1"></i> Upload Berkas</label>
 
                             <input type="radio" class="btn-check" name="photo_method" id="photo_method_url" value="url" onchange="switchModalPhotoMethod('url')">
-                            <label class="btn btn-sm rounded-pill fw-semibold" for="photo_method_url"><i class="bi bi-link-45deg me-1"></i> Tautan URL Foto</label>
+                            <label class="btn btn-sm btn-outline-primary border-0 rounded-pill fw-semibold" for="photo_method_url"><i class="bi bi-link-45deg me-1"></i> Tautan URL Foto</label>
                         </div>
                     </div>
 
@@ -829,6 +852,8 @@ function previewImageFile(input, imgId, initialId, infoId) {
         };
         reader.readAsDataURL(file);
     }
+}
+
 // Handler Switch Metode Foto Modal
 function switchModalPhotoMethod(method) {
     const boxUpload = document.getElementById('box_modal_photo_upload');
@@ -848,6 +873,10 @@ function switchModalPhotoMethod(method) {
     }
 }
 
+// Nilai Foto Profil Pengguna Saat Ini untuk Reset Preview
+const initialUserPhoto = <?= json_encode($hasCustomPhoto ? formatPhotoUrl($userProfile['foto']) : '') ?>;
+const initialUserInitial = <?= json_encode(strtoupper(substr($userProfile['nama'] ?: 'U', 0, 1))) ?>;
+
 // Handler Switch Metode Foto Form Identitas Diri
 function switchFormPhotoMethod(method) {
     const boxKeep = document.getElementById('fpm_box_keep');
@@ -855,6 +884,10 @@ function switchFormPhotoMethod(method) {
     const boxUrl = document.getElementById('fpm_box_url');
     const inputFoto = document.getElementById('inputFotoProfilForm');
     const inputUrl = document.getElementById('inputFotoUrlForm');
+    const previewImg = document.getElementById('formFotoPreview');
+    const initialDiv = document.getElementById('formFotoInitial');
+    const uploadInfo = document.getElementById('formFotoUploadInfo');
+    const urlInfo = document.getElementById('formFotoUrlInfo');
 
     if (boxKeep) boxKeep.classList.toggle('d-none', method !== 'keep');
     if (boxUpload) boxUpload.classList.toggle('d-none', method !== 'upload');
@@ -863,10 +896,28 @@ function switchFormPhotoMethod(method) {
     if (method === 'keep') {
         if (inputFoto) inputFoto.value = '';
         if (inputUrl) inputUrl.value = '';
+        if (uploadInfo) uploadInfo.innerHTML = '';
+        if (urlInfo) urlInfo.innerHTML = '';
+        if (previewImg && initialUserPhoto) {
+            previewImg.src = initialUserPhoto;
+            previewImg.style.display = 'block';
+            if (initialDiv) initialDiv.style.display = 'none';
+        } else {
+            if (previewImg) previewImg.style.display = 'none';
+            if (initialDiv) initialDiv.style.display = 'block';
+        }
     } else if (method === 'upload') {
         if (inputUrl) inputUrl.value = '';
+        if (urlInfo) urlInfo.innerHTML = '';
+        if (inputFoto && inputFoto.files && inputFoto.files[0]) {
+            previewImageFile(inputFoto, 'formFotoPreview', 'formFotoInitial', 'formFotoUploadInfo');
+        }
     } else if (method === 'url') {
         if (inputFoto) inputFoto.value = '';
+        if (uploadInfo) uploadInfo.innerHTML = '';
+        if (inputUrl && inputUrl.value) {
+            previewPhotoUrl(inputUrl.value, 'formFotoPreview', 'formFotoInitial', 'formFotoUrlInfo');
+        }
     }
 }
 

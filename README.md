@@ -303,9 +303,14 @@ Ketika Anda berpindah ke komputer atau laptop lain:
     - Pada modal Tambah dan Edit, pemilihan cabang disajikan dengan komponen dynamic repeater (+ Tambah Cabang) yang menyajikan dropdown cabang ekstra sekaligus menampilkan guru pembinanya secara otomatis dan interaktif.
     - Ekspor data ke Excel & CSV menyertakan kolom data Guru Pembina secara lengkap.
 
-24. **Mode Switch Foto Profil Pengguna (Upload Berkas vs Tautan URL) (`profil.php`)**:
-    - Pengelolaan foto profil pengguna mendukung dua metode penyimpanan yang dapat dipilih salah satu (mode switch) antara **Upload Berkas** dan **Tautan URL Foto**.
-    - Berfungsi penuh baik pada modal upload cepat maupun formulir identitas diri, dengan live preview instan dan konversi otomatis tautan Google Drive ke format thumbnail yang siap tampil.
+24. **Mode Switch Foto Profil Pengguna & Keselarasan Desain Formulir (`profil.php`)**:
+    - Pengelolaan foto profil pengguna mendukung dua metode penyimpanan yang dapat dipilih salah satu (mode switch) antara **Upload Berkas** dan **Tautan URL Foto**, serta opsi **Tetap (Gunakan Saat Ini)**.
+    - Desain antarmuka diselaraskan secara konsisten dengan formulir upload lain (`form-jurnal.php`, `form-wali.php`, dll.) menggunakan segmented control pill interaktif (`btn-outline-primary`), pratinjau live avatar instan, dan validasi berkas client-side.
+    - Mendukung tautan URL gambar web langsung maupun Google Drive dengan konversi otomatis ke resolusi optimal.
+
+25. **Pengecekan & Pengecualian Nama Siswa yang Sudah Digunakan (`master-bimbingan.php` & `master-ekstra.php`)**:
+    - Pada fitur *Pilih Siswa dari DataMurid* di modal **Tambah Data Siswa Bimbingan** dan **Tambah Anggota Ekstra**, sistem melakukan pengecekan otomatis ke database: siswa yang namanya/NISN-nya sudah terdaftar dalam `data_murid_guru_wali` atau `data_murid_ekstra` **tidak ditampilkan lagi** pada daftar pencarian.
+    - Dilengkapi pesan informatif jika seluruh siswa DataMurid telah terdaftar, serta validasi backend controller yang menolak penambahan duplikat jika dicoba di-submit ulang.
 
 ---
 
