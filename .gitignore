@@ -18,7 +18,5 @@ desktop.ini
 !database/schema.sql
 
 # Uploads directory placeholders
-uploads/photos/*
-!uploads/photos/.gitkeep
-uploads/documents/*
-!uploads/documents/.gitkeep
+uploads/*/*
+!uploads/*/.gitkeep

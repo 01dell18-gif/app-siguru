@@ -90,6 +90,7 @@ SIGURU dirancang untuk menggantikan pencatatan administrasi sekolah konvensional
 | **Manajemen User (`user-management.php`)** | ✅ Penuh | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 > **Aturan Keamanan & Hak Akses Ketat (RBAC Extended)**:
+>
 > 1. **Data Siswa (`master-murid.php`)**: Untuk hak akses selain Super Admin (Guru & Wali Kelas), tombol *Tambah Siswa* dan *Import Excel* disembunyikan, kolom aksi berstatus `🔒 Terkunci`, serta quick-edit checkbox status terhubung dinonaktifkan (`disabled`). Hanya Super Admin yang berhak memodifikasi data siswa.
 > 2. **Data Siswa Bimbingan (`master-bimbingan.php`)**: Filter nama guru terkunci sesuai akun Guru Wali yang login. Hanya Super Admin yang dapat memilih guru wali lain dari dropdown.
 > 3. **Formulir Jurnal Mengajar (`form-jurnal.php`)**: Bidang *Ketuntasan Materi* mendukung **input manual bebas** (melalui text input + HTML5 datalist) serta opsi cepat melalui dropdown preset (*Tuntas, Berlanjut, Belum Tuntas, Remedial, -*).
