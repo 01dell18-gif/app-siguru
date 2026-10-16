@@ -45,11 +45,6 @@ if (!empty($selectedEkstra)) {
     $stmtPeserta = $pdo->prepare("SELECT * FROM data_murid_ekstra WHERE (nama_ekstra = ? OR nama_ekstra LIKE ? OR nama_ekstra LIKE ? OR nama_ekstra LIKE ?) ORDER BY nama_murid ASC");
     $stmtPeserta->execute([$selectedEkstra, "$selectedEkstra, %", "%, $selectedEkstra, %", "%, $selectedEkstra"]);
     $siswaPeserta = $stmtPeserta->fetchAll();
-    
-    // Fallback jika belum ada yang terdaftar spesifik pada nama_ekstra ini, ambil semua siswa ekstra
-    if (empty($siswaPeserta)) {
-        $siswaPeserta = $pdo->query("SELECT * FROM data_murid_ekstra ORDER BY nama_murid ASC")->fetchAll();
-    }
 }
 
 // Simpan Formulir Kegiatan Ekstra
@@ -57,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postTanggal = $_POST['tanggal'] ?? $tanggalHariIni;
     $postTA = $_POST['tahun_ajaran'] ?? $tahunAjaran;
     $postSemester = $_POST['semester'] ?? $semester;
-    $postEkstra = $_POST['nama_ekstra'] ?? $selectedEkstra;
+    $postEkstra = trim($_POST['nama_ekstra'] ?? $selectedEkstra);
     $postPembina = isSuperAdmin() ? trim($_POST['pembina_ekstra'] ?? $selectedGuru) : $user['nama'];
     $postKegiatan = trim($_POST['kegiatan_ekstra'] ?? '');
     $postKeterangan = trim($_POST['keterangan'] ?? '');
@@ -75,20 +70,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (!empty($postKegiatan) && !empty($postPeserta)) {
+    // Cabang ekstra yang disimpan ke tabel hasil_ekstra kolom kegiatan_ekstra
+    $cabangEkstra = !empty($postEkstra) ? $postEkstra : $postKegiatan;
+
+    // Gabungkan agenda ke keterangan kegiatan agar informasi materi/latihan tersimpan lengkap
+    $fullKeterangan = $postKegiatan;
+    if (!empty($postKeterangan)) {
+        $fullKeterangan = !empty($fullKeterangan) ? "$fullKeterangan\n$postKeterangan" : $postKeterangan;
+    }
+
+    if (!empty($cabangEkstra) && !empty($postPeserta)) {
         $stmt = $pdo->prepare("INSERT INTO hasil_ekstra (
             tanggal, tahun_ajaran, semester, nama_murid, kegiatan_ekstra, keterangan, link_bukti_ekstra, pembina_ekstra
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         
         $stmt->execute([
-            $postTanggal, $postTA, $postSemester, $postPeserta, $postKegiatan, $postKeterangan, $linkBukti, $postPembina
+            $postTanggal, $postTA, $postSemester, $postPeserta, $cabangEkstra, $fullKeterangan, $linkBukti, $postPembina
         ]);
 
-        setFlash('success', 'Kegiatan Ekstrakurikuler ' . htmlspecialchars($postEkstra) . ' (' . htmlspecialchars($postPembina) . ') berhasil disimpan!');
+        setFlash('success', 'Kegiatan Ekstrakurikuler ' . htmlspecialchars($cabangEkstra) . ' (' . htmlspecialchars($postPembina) . ') berhasil disimpan!');
         header("Location: laporan-ekstra.php");
         exit;
     } else {
-        setFlash('danger', 'Harap isi kegiatan ekstra dan pilih peserta yang hadir.');
+        setFlash('danger', 'Harap tentukan cabang ekstra, agenda kegiatan, dan pilih peserta yang hadir.');
     }
 }
 
@@ -133,25 +137,43 @@ require_once __DIR__ . '/views/sidebar.php';
 
                 <!-- 3. Cabang Ekstra (Sesuai Cabang Guru: 1 = Langsung Terisi, >1 = Dropdown) -->
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold small text-secondary">Cabang Ekstrakurikuler</label>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-semibold small text-secondary mb-0">Cabang Ekstrakurikuler</label>
+                        <?php if (count($guruEkstraList) > 1): ?>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold" style="font-size: 0.72rem;">
+                                <i class="bi bi-award me-1"></i><?= count($guruEkstraList) ?> Cabang Binaan
+                            </span>
+                        <?php endif; ?>
+                    </div>
                     <?php if (!empty($guruEkstraList)): ?>
                         <?php if (count($guruEkstraList) === 1): ?>
-                            <input type="text" class="form-control bg-light fw-semibold text-dark" value="🔒 <?= htmlspecialchars($guruEkstraList[0]) ?>" readonly title="Terkunci sesuai cabang ekstrakurikuler yang Anda bina">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-primary border-end-0"><i class="bi bi-award-fill"></i></span>
+                                <input type="text" class="form-control bg-light fw-bold text-dark border-start-0" value="<?= htmlspecialchars($guruEkstraList[0]) ?>" readonly title="Terkunci sesuai cabang ekstrakurikuler binaan Anda">
+                            </div>
                             <input type="hidden" name="nama_ekstra" value="<?= htmlspecialchars($guruEkstraList[0]) ?>">
                         <?php else: ?>
-                            <select name="nama_ekstra" class="form-select" onchange="window.location.href='form-ekstra.php?ekstra=' + encodeURIComponent(this.value) + '<?= $isSuper ? "&guru=" . urlencode($selectedGuru) : "" ?>'">
+                            <select name="nama_ekstra" class="form-select fw-semibold" onchange="window.location.href='form-ekstra.php?ekstra=' + encodeURIComponent(this.value) + '<?= $isSuper ? "&guru=" . urlencode($selectedGuru) : "" ?>'">
                                 <?php foreach ($guruEkstraList as $e): ?>
-                                    <option value="<?= htmlspecialchars($e) ?>" <?= $selectedEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
+                                    <option value="<?= htmlspecialchars($e) ?>" <?= $selectedEkstra === $e ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($e) ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
+                            <div class="form-text small text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Pilih cabang ekstra yang sedang dilaksanakan hari ini.
+                            </div>
                         <?php endif; ?>
                     <?php else: ?>
                         <?php if ($isSuper): ?>
-                            <select name="nama_ekstra" class="form-select" onchange="window.location.href='form-ekstra.php?ekstra=' + encodeURIComponent(this.value) + '&guru=<?= urlencode($selectedGuru) ?>'">
+                            <select name="nama_ekstra" class="form-select fw-semibold" onchange="window.location.href='form-ekstra.php?ekstra=' + encodeURIComponent(this.value) + '&guru=<?= urlencode($selectedGuru) ?>'">
                                 <?php foreach ($ekstraList as $e): ?>
                                     <option value="<?= htmlspecialchars($e) ?>" <?= $selectedEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <div class="form-text small text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Mode Super Admin: Pilih cabang ekstra dari daftar sistem.
+                            </div>
                         <?php else: ?>
                             <input type="text" class="form-control bg-light text-muted" value="(Tidak Mengampu Ekstrakurikuler)" readonly title="Anda tidak tercatat mengampu cabang ekstrakurikuler">
                             <input type="hidden" name="nama_ekstra" value="">
@@ -180,19 +202,34 @@ require_once __DIR__ . '/views/sidebar.php';
 
                 <!-- 4. Daftar Siswa Peserta (Multi-select Checkbox Table Sesuai PRD) -->
                 <div class="col-12">
-                    <label class="form-label fw-semibold small text-secondary d-block">
-                        Daftar Hadir Anggota Ekstrakurikuler (<?= htmlspecialchars($selectedEkstra) ?>)
-                    </label>
-                    <div class="card p-3 bg-light border rounded-3" style="max-height: 200px; overflow-y: auto;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-semibold small text-secondary mb-0">
+                            Daftar Hadir Anggota Ekstrakurikuler (<?= htmlspecialchars($selectedEkstra ?: 'Belum Dipilih') ?>)
+                        </label>
+                        <?php if (!empty($siswaPeserta)): ?>
+                            <div>
+                                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-0" style="font-size: 0.72rem;" onclick="toggleAllPeserta(true)">
+                                    <i class="bi bi-check-all me-1"></i>Pilih Semua
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-0 ms-1" style="font-size: 0.72rem;" onclick="toggleAllPeserta(false)">
+                                    <i class="bi bi-x-circle me-1"></i>Batal Semua
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="card p-3 bg-light border rounded-3" style="max-height: 220px; overflow-y: auto;">
                         <div class="row g-2">
                             <?php if (empty($siswaPeserta)): ?>
-                                <div class="col-12 text-muted small">Belum ada siswa terdaftar pada cabang ekstra ini.</div>
+                                <div class="col-12 text-muted small py-2">
+                                    <i class="bi bi-info-circle me-1 text-primary"></i>Belum ada siswa terdaftar pada cabang ekstra <strong><?= htmlspecialchars($selectedEkstra ?: '-') ?></strong>. Anda dapat mendaftarkan siswa melalui menu <a href="master-ekstra.php" class="text-decoration-underline fw-semibold">Master Ekstrakurikuler</a>.
+                                </div>
                             <?php else: foreach ($siswaPeserta as $sp): ?>
                                 <div class="col-md-4 col-sm-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="nama_murid[]" value="<?= htmlspecialchars($sp['nama_murid']) ?>" id="sp_<?= $sp['id'] ?>" checked>
-                                        <label class="form-check-label small" for="sp_<?= $sp['id'] ?>">
-                                            <?= htmlspecialchars($sp['nama_murid']) ?> <span class="badge bg-secondary-subtle text-secondary"><?= htmlspecialchars($sp['kelas']) ?></span>
+                                    <div class="form-check p-2 bg-white rounded-2 border shadow-xs d-flex align-items-center gap-2">
+                                        <input class="form-check-input peserta-chk ms-1" type="checkbox" name="nama_murid[]" value="<?= htmlspecialchars($sp['nama_murid']) ?>" id="sp_<?= $sp['id'] ?>" checked>
+                                        <label class="form-check-label small flex-grow-1 cursor-pointer" for="sp_<?= $sp['id'] ?>">
+                                            <span class="fw-semibold text-dark"><?= htmlspecialchars($sp['nama_murid']) ?></span>
+                                            <span class="badge bg-secondary-subtle text-secondary ms-1"><?= htmlspecialchars($sp['kelas']) ?></span>
                                         </label>
                                     </div>
                                 </div>
@@ -258,5 +295,11 @@ require_once __DIR__ . '/views/sidebar.php';
         </form>
     </div>
 </main>
+
+<script>
+function toggleAllPeserta(check) {
+    document.querySelectorAll('.peserta-chk').forEach(cb => cb.checked = check);
+}
+</script>
 
 <?php require_once __DIR__ . '/views/footer.php'; ?>

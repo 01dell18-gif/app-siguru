@@ -61,7 +61,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nip = trim($_POST['nip'] ?? '');
         $guruWali = $_POST['sebagai_guru_wali'] ?? 'Tidak';
         $waliKelas = $_POST['sebagai_wali_kelas'] ?? '-';
-        $pembinaEkstra = trim($_POST['pembina_ekstra'] ?? '-');
+        
+        if (isset($_POST['pembina_ekstra']) && is_array($_POST['pembina_ekstra'])) {
+            $cleanPe = array_values(array_filter(array_map('trim', $_POST['pembina_ekstra']), function($v) {
+                return $v !== '' && $v !== '-';
+            }));
+            $pembinaEkstra = !empty($cleanPe) ? implode(', ', array_unique($cleanPe)) : '-';
+        } else {
+            $pembinaEkstra = trim($_POST['pembina_ekstra'] ?? '-');
+            if (empty($pembinaEkstra)) $pembinaEkstra = '-';
+        }
 
         if (!empty($nama)) {
             $stmt = $pdo->prepare("INSERT INTO data_guru (nama_guru, nip, sebagai_guru_wali, sebagai_wali_kelas, pembina_ekstra) VALUES (?, ?, ?, ?, ?)");
@@ -78,7 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nip = trim($_POST['nip'] ?? '');
         $guruWali = $_POST['sebagai_guru_wali'] ?? 'Tidak';
         $waliKelas = $_POST['sebagai_wali_kelas'] ?? '-';
-        $pembinaEkstra = trim($_POST['pembina_ekstra'] ?? '-');
+
+        if (isset($_POST['pembina_ekstra']) && is_array($_POST['pembina_ekstra'])) {
+            $cleanPe = array_values(array_filter(array_map('trim', $_POST['pembina_ekstra']), function($v) {
+                return $v !== '' && $v !== '-';
+            }));
+            $pembinaEkstra = !empty($cleanPe) ? implode(', ', array_unique($cleanPe)) : '-';
+        } else {
+            $pembinaEkstra = trim($_POST['pembina_ekstra'] ?? '-');
+            if (empty($pembinaEkstra)) $pembinaEkstra = '-';
+        }
 
         $stmt = $pdo->prepare("UPDATE data_guru SET nama_guru = ?, nip = ?, sebagai_guru_wali = ?, sebagai_wali_kelas = ?, pembina_ekstra = ? WHERE id = ?");
         $stmt->execute([$nama, $nip, $guruWali, $waliKelas, $pembinaEkstra, $id]);
@@ -284,9 +302,15 @@ $guruList = $stmt->fetchAll();
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if (!empty($g['pembina_ekstra']) && $g['pembina_ekstra'] !== '-'): ?>
-                                    <span class="badge bg-info-subtle text-info border border-info-subtle fw-bold px-2 py-1"><i class="bi bi-award me-1"></i><?= htmlspecialchars($g['pembina_ekstra']) ?></span>
-                                <?php else: ?>
+                                <?php 
+                                $peList = array_values(array_filter(array_map('trim', explode(',', $g['pembina_ekstra'] ?? ''))));
+                                if (!empty($peList) && $peList[0] !== '-'): 
+                                    foreach ($peList as $peItem): ?>
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle fw-semibold px-2 py-1 mb-1 me-1 d-inline-block">
+                                            <i class="bi bi-award me-1"></i><?= htmlspecialchars($peItem) ?>
+                                        </span>
+                                    <?php endforeach;
+                                else: ?>
                                     <span class="text-muted">-</span>
                                 <?php endif; ?>
                             </td>
@@ -364,13 +388,18 @@ $guruList = $stmt->fetchAll();
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small">Pembina Ekstrakurikuler</label>
-                        <select name="pembina_ekstra" class="form-select">
-                            <option value="-">- Bukan Pembina Ekstra -</option>
-                            <?php foreach ($ekstraList as $e): ?>
-                                <option value="<?= htmlspecialchars($e) ?>"><?= htmlspecialchars($e) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold small mb-0">Pembina Ekstrakurikuler (Bisa Lebih Dari 1)</label>
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-0" style="font-size: 0.74rem;" onclick="addGuruEkstraRow('add')">
+                                <i class="bi bi-plus-circle me-1"></i>Tambah Ekstra
+                            </button>
+                        </div>
+                        <div id="containerGuruEkstraAdd" class="d-flex flex-column gap-2 p-2 border rounded-3 bg-light">
+                            <!-- Rows dynamically generated -->
+                        </div>
+                        <div class="form-text text-muted small mt-1">
+                            <i class="bi bi-info-circle me-1"></i>Pilih satu atau lebih cabang jika guru membina beberapa ekstrakurikuler.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -419,13 +448,18 @@ $guruList = $stmt->fetchAll();
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small">Pembina Ekstrakurikuler</label>
-                        <select name="pembina_ekstra" id="edit_pe" class="form-select">
-                            <option value="-">- Bukan Pembina Ekstra -</option>
-                            <?php foreach ($ekstraList as $e): ?>
-                                <option value="<?= htmlspecialchars($e) ?>"><?= htmlspecialchars($e) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold small mb-0">Pembina Ekstrakurikuler (Bisa Lebih Dari 1)</label>
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-0" style="font-size: 0.74rem;" onclick="addGuruEkstraRow('edit')">
+                                <i class="bi bi-plus-circle me-1"></i>Tambah Ekstra
+                            </button>
+                        </div>
+                        <div id="containerGuruEkstraEdit" class="d-flex flex-column gap-2 p-2 border rounded-3 bg-light">
+                            <!-- Rows dynamically populated via editGuru() -->
+                        </div>
+                        <div class="form-text text-muted small mt-1">
+                            <i class="bi bi-info-circle me-1"></i>Pilih satu atau lebih cabang jika guru membina beberapa ekstrakurikuler.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -477,13 +511,87 @@ $guruList = $stmt->fetchAll();
 </form>
 
 <script>
+const ekstraOptionsMaster = <?= json_encode($ekstraList) ?>;
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function createGuruEkstraRow(type, selectedVal = '') {
+    const div = document.createElement('div');
+    div.className = 'guru-ekstra-row d-flex align-items-center gap-2 bg-white p-2 border rounded-3 shadow-xs';
+    let opts = '<option value="-">- Bukan Pembina Ekstra -</option>';
+    ekstraOptionsMaster.forEach(e => {
+        const isSel = (e === selectedVal) ? 'selected' : '';
+        opts += `<option value="${escapeHtml(e)}" ${isSel}>${escapeHtml(e)}</option>`;
+    });
+    div.innerHTML = `
+        <span class="text-primary ps-1"><i class="bi bi-award"></i></span>
+        <select name="pembina_ekstra[]" class="form-select form-select-sm flex-grow-1">
+            ${opts}
+        </select>
+        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;" onclick="removeGuruEkstraRow(this)" title="Hapus Baris">
+            <i class="bi bi-trash small"></i>
+        </button>
+    `;
+    return div;
+}
+
+function addGuruEkstraRow(type, selectedVal = '') {
+    const containerId = type === 'add' ? 'containerGuruEkstraAdd' : 'containerGuruEkstraEdit';
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.appendChild(createGuruEkstraRow(type, selectedVal));
+}
+
+function removeGuruEkstraRow(btn) {
+    const container = btn.closest('.d-flex.flex-column');
+    const row = btn.closest('.guru-ekstra-row');
+    if (row) row.remove();
+    if (container && container.querySelectorAll('.guru-ekstra-row').length === 0) {
+        const isAdd = container.id === 'containerGuruEkstraAdd';
+        addGuruEkstraRow(isAdd ? 'add' : 'edit', '-');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    addGuruEkstraRow('add', '-');
+    
+    document.getElementById('modalTambahGuru')?.addEventListener('show.bs.modal', function () {
+        const container = document.getElementById('containerGuruEkstraAdd');
+        if (container && container.querySelectorAll('.guru-ekstra-row').length === 0) {
+            container.innerHTML = '';
+            addGuruEkstraRow('add', '-');
+        }
+    });
+});
+
 function editGuru(g) {
     document.getElementById('edit_id').value = g.id;
     document.getElementById('edit_nama').value = g.nama_guru;
     document.getElementById('edit_nip').value = g.nip;
     document.getElementById('edit_gw').value = g.sebagai_guru_wali;
     document.getElementById('edit_wk').value = g.sebagai_wali_kelas;
-    document.getElementById('edit_pe').value = g.pembina_ekstra || '-';
+    
+    const contEdit = document.getElementById('containerGuruEkstraEdit');
+    if (contEdit) {
+        contEdit.innerHTML = '';
+        let currentEkstras = [];
+        if (g.pembina_ekstra && g.pembina_ekstra !== '-') {
+            currentEkstras = g.pembina_ekstra.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        if (currentEkstras.length > 0) {
+            currentEkstras.forEach(ek => addGuruEkstraRow('edit', ek));
+        } else {
+            addGuruEkstraRow('edit', '-');
+        }
+    }
     new bootstrap.Modal(document.getElementById('modalEditGuru')).show();
 }
 
