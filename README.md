@@ -80,6 +80,19 @@ Jika instansi atau sekolah Anda ingin menggunakan server MySQL XAMPP:
 4. Pilih tab **Import**, pilih berkas `database/schema_mysql.sql` dari proyek ini, lalu klik **Import**.
 5. Buka berkas `config/database.php` pada editor teks, ubah pengaturan koneksi driver dari `'sqlite'` ke `'mysql'` (`DB_DRIVER = 'mysql'`).
 6. Simpan file. SIGURU kini terhubung langsung ke database MySQL XAMPP.
+7. **Daftar Akun Bawaan Siap Pakai (Langsung Bisa Login)**:
+   Setelah `schema_mysql.sql` diimpor ke database `siguru_db`, Anda dapat langsung masuk ke portal dengan salah satu akun berikut:
+
+   | Hak Akses / Peran | Username | Password | Keterangan |
+   | :--- | :--- | :--- | :--- |
+   | **Super Admin (Utama)** | `SAdmin` | `Pengelola@Admin@Super` | Akun Induk Pengelola (Hak Akses Penuh) |
+   | **Super Admin** | `admin` | `admin123` | Administrator Sekolah Alternatif |
+   | **Super Admin** | `ferryxz` | `gurudkv` | Akun Pengembang FYJ Channel |
+   | **Pelihat (Viewer)** | `viewer` | `view123` | Pengawas Sekolah (Hanya Rekap & Laporan) |
+   | **Pelihat (Viewer)** | `pelihat` | `pelihat123` | Tamu / Peninjau Laporan |
+   | **Guru Mapel & Multi-Peran** | `guru` | `guru123` | Guru Mapel, Wali Kelas, Guru Wali, & Pembina |
+   | **Wali Kelas** | `wali` | `wali123` | Wali Kelas Binaan |
+   | **Guru Wali** | `guruwali` | `gw123` | Pembimbing Binaan Siswa |
 
 ---
 
