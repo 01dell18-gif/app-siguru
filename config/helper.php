@@ -125,6 +125,9 @@ function getDaftarEkstra() {
         $settings = getSettings();
     }
     $list = getListOptions($settings['list_ekstrakurikuler'] ?? '');
+    if (!empty($list)) {
+        return array_values(array_filter($list));
+    }
     try {
         $pdo = getDBConnection();
         $stmt = $pdo->query("SELECT DISTINCT nama_ekstra FROM data_murid_ekstra WHERE nama_ekstra IS NOT NULL AND nama_ekstra != ''");
@@ -140,9 +143,13 @@ function getDaftarEkstra() {
         }
         $stmt2 = $pdo->query("SELECT DISTINCT pembina_ekstra FROM data_guru WHERE pembina_ekstra IS NOT NULL AND pembina_ekstra != '' AND pembina_ekstra != '-'");
         while ($val = trim((string)$stmt2->fetchColumn())) {
-            $valLower = strtolower($val);
-            if ($val !== '' && $val !== '-' && $val !== '[]' && !in_array($valLower, ['«', '»', '&lt;', '&gt;', '&lt', '&gt', '<', '>']) && stripos($val, 'c_rgszSh') === false && !in_array($val, $list)) {
-                $list[] = $val;
+            $parts = explode(',', $val);
+            foreach ($parts as $p) {
+                $p = trim($p);
+                $pLower = strtolower($p);
+                if ($p !== '' && $p !== '-' && $p !== '[]' && !in_array($pLower, ['«', '»', '&lt;', '&gt;', '&lt', '&gt', '<', '>']) && stripos($p, 'c_rgszSh') === false && !in_array($p, $list)) {
+                    $list[] = $p;
+                }
             }
         }
     } catch (Exception $e) {}

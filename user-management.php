@@ -245,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $userList = $pdo->query("SELECT * FROM data_user ORDER BY id ASC")->fetchAll();
-$guruList = $pdo->query("SELECT id, nama_guru, nip, sebagai_guru_wali, sebagai_wali_kelas FROM data_guru ORDER BY nama_guru ASC")->fetchAll();
+$guruList = $pdo->query("SELECT id, nama_guru, nip, sebagai_guru_wali, sebagai_wali_kelas, pembina_ekstra FROM data_guru ORDER BY nama_guru ASC")->fetchAll();
 
 $pageTitle = 'Manajemen Pengguna & Role';
 require_once __DIR__ . '/views/header.php';
@@ -396,17 +396,46 @@ require_once __DIR__ . '/views/sidebar.php';
                 <div class="modal-body p-4">
                     <!-- Ambil Data dari DataGuru Sesuai PRD -->
                     <div class="mb-3 p-3 bg-light rounded-3 border">
-                        <label class="form-label small fw-semibold text-primary d-block">
-                            <i class="bi bi-magic me-1"></i> Ambil Data dari Guru Master (Opsional):
-                        </label>
-                        <select class="form-select form-select-sm" onchange="autoFillGuruUser(this)">
-                            <option value="">-- Pilih Guru untuk Mengisi Nama & NIP Otomatis --</option>
-                            <?php foreach ($guruList as $g): ?>
-                                <option value="<?= htmlspecialchars(json_encode($g)) ?>">
-                                    <?= htmlspecialchars($g['nama_guru']) ?> (NIP: <?= htmlspecialchars($g['nip'] ?: '-') ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-primary mb-0">
+                                <i class="bi bi-magic me-1"></i> Ambil Data dari Guru Master (Opsional):
+                            </label>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem;">
+                                <i class="bi bi-keyboard me-1"></i>Bisa Diketik
+                            </span>
+                        </div>
+                        <div class="position-relative" id="comboboxGuruAddContainer">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white border-end-0 text-muted">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" 
+                                       id="inputGuruSearchAdd" 
+                                       class="form-control border-start-0 border-end-0" 
+                                       placeholder="Ketik nama guru atau NIP untuk mengisi otomatis..." 
+                                       autocomplete="off"
+                                       list="datalistGuruMaster">
+                                <button type="button" 
+                                        id="btnGuruClearAdd" 
+                                        class="btn btn-outline-secondary border-start-0 border-end-0 d-none text-muted" 
+                                        title="Kosongkan">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </button>
+                                <button type="button" 
+                                        id="btnGuruToggleAdd" 
+                                        class="btn btn-outline-secondary" 
+                                        title="Tampilkan semua daftar guru">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div id="dropdownGuruListAdd" 
+                                 class="dropdown-menu shadow-sm w-100 mt-1 py-0" 
+                                 style="max-height: 240px; overflow-y: auto; display: none; z-index: 1060;">
+                            </div>
+                        </div>
+                        <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">
+                            <i class="bi bi-info-circle me-1"></i>Ketik nama guru atau NIP untuk mengisi Nama Lengkap, NIP, Username, dan Role secara otomatis.
+                        </div>
                     </div>
 
                     <div class="row g-3">
@@ -500,6 +529,50 @@ require_once __DIR__ . '/views/sidebar.php';
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="id" id="edit_u_id">
                 <div class="modal-body p-4">
+                    <!-- Sinkron / Ambil Data dari Guru Master -->
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-primary mb-0">
+                                <i class="bi bi-magic me-1"></i> Ambil Data dari Guru Master (Opsional):
+                            </label>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem;">
+                                <i class="bi bi-keyboard me-1"></i>Bisa Diketik
+                            </span>
+                        </div>
+                        <div class="position-relative" id="comboboxGuruEditContainer">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white border-end-0 text-muted">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" 
+                                       id="inputGuruSearchEdit" 
+                                       class="form-control border-start-0 border-end-0" 
+                                       placeholder="Ketik nama guru atau NIP untuk memperbarui data..." 
+                                       autocomplete="off"
+                                       list="datalistGuruMaster">
+                                <button type="button" 
+                                        id="btnGuruClearEdit" 
+                                        class="btn btn-outline-secondary border-start-0 border-end-0 d-none text-muted" 
+                                        title="Kosongkan">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </button>
+                                <button type="button" 
+                                        id="btnGuruToggleEdit" 
+                                        class="btn btn-outline-secondary" 
+                                        title="Tampilkan semua daftar guru">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div id="dropdownGuruListEdit" 
+                                 class="dropdown-menu shadow-sm w-100 mt-1 py-0" 
+                                 style="max-height: 240px; overflow-y: auto; display: none; z-index: 1060;">
+                            </div>
+                        </div>
+                        <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">
+                            <i class="bi bi-info-circle me-1"></i>Pilih guru untuk memperbarui Nama Lengkap, NIP, dan Peran pengguna ini sesuai Master Guru.
+                        </div>
+                    </div>
+
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold small">Nama Lengkap</label>
@@ -623,30 +696,225 @@ require_once __DIR__ . '/views/sidebar.php';
     <input type="hidden" name="id" id="delete_u_id">
 </form>
 
-<script>
-function autoFillGuruUser(sel) {
-    if (!sel.value) return;
-    const g = JSON.parse(sel.value);
-    document.getElementById('add_u_nama').value = g.nama_guru || '';
-    document.getElementById('add_u_nip').value = g.nip || '';
-    
-    // Generate username default dari nama
-    const cleanName = (g.nama_guru || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    document.getElementById('add_u_username').value = cleanName.substring(0, 10);
+<datalist id="datalistGuruMaster">
+    <?php foreach ($guruList as $g): ?>
+        <option value="<?= htmlspecialchars($g['nama_guru']) ?>">NIP: <?= htmlspecialchars($g['nip'] ?: '-') ?></option>
+    <?php endforeach; ?>
+</datalist>
 
-    // Auto checklist role yang sesuai
-    if (g.sebagai_guru_wali === 'Ya' || g.sebagai_guru_wali === 'ya') {
-        document.getElementById('role_gw').checked = true;
+<script>
+const guruMasterList = <?= json_encode($guruList) ?>;
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function applyGuruToUserForm(g, mode) {
+    if (!g) return;
+    if (mode === 'add') {
+        const namaInput = document.getElementById('add_u_nama');
+        const nipInput = document.getElementById('add_u_nip');
+        const userInput = document.getElementById('add_u_username');
+
+        if (namaInput) namaInput.value = g.nama_guru || '';
+        if (nipInput) nipInput.value = g.nip || '';
+
+        // Generate username jika belum diisi atau default
+        if (userInput) {
+            const cleanName = (g.nama_guru || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            userInput.value = cleanName.substring(0, 10);
+        }
+
+        // Checklist roles
+        const roleGw = document.getElementById('role_gw');
+        const roleWk = document.getElementById('role_wk');
+        const roleEk = document.getElementById('role_ek');
+        const roleGuru = document.getElementById('role_guru');
+
+        if (roleGuru) roleGuru.checked = true;
+        if (roleGw && (g.sebagai_guru_wali === 'Ya' || g.sebagai_guru_wali === 'ya')) {
+            roleGw.checked = true;
+        }
+        if (roleWk && g.sebagai_wali_kelas && g.sebagai_wali_kelas !== '-') {
+            roleWk.checked = true;
+        }
+        if (roleEk && g.pembina_ekstra && g.pembina_ekstra !== '-') {
+            roleEk.checked = true;
+        }
+    } else if (mode === 'edit') {
+        const namaInput = document.getElementById('edit_u_nama');
+        const nipInput = document.getElementById('edit_u_nip');
+        if (namaInput) namaInput.value = g.nama_guru || '';
+        if (nipInput) nipInput.value = g.nip || '';
+
+        // Checklist roles
+        const eRoleGw = document.getElementById('e_role_gw');
+        const eRoleWk = document.getElementById('e_role_wk');
+        const eRoleEk = document.getElementById('e_role_ek');
+        const eRoleGuru = document.getElementById('e_role_guru');
+
+        if (eRoleGuru) eRoleGuru.checked = true;
+        if (eRoleGw && (g.sebagai_guru_wali === 'Ya' || g.sebagai_guru_wali === 'ya')) {
+            eRoleGw.checked = true;
+        }
+        if (eRoleWk && g.sebagai_wali_kelas && g.sebagai_wali_kelas !== '-') {
+            eRoleWk.checked = true;
+        }
+        if (eRoleEk && g.pembina_ekstra && g.pembina_ekstra !== '-') {
+            eRoleEk.checked = true;
+        }
     }
-    if (g.sebagai_wali_kelas && g.sebagai_wali_kelas !== '-') {
-        document.getElementById('role_wk').checked = true;
+}
+
+function initSearchableGuruPicker(config) {
+    const input = document.getElementById(config.inputId);
+    const toggleBtn = document.getElementById(config.toggleBtnId);
+    const clearBtn = document.getElementById(config.clearBtnId);
+    const dropdown = document.getElementById(config.dropdownId);
+    const container = document.getElementById(config.containerId);
+    const items = guruMasterList || [];
+
+    if (!input || !dropdown || !container) return;
+
+    function renderDropdown(filterText = '') {
+        const q = filterText.trim().toLowerCase();
+        const currentList = items.filter(g => {
+            if (!q) return true;
+            const matchNama = (g.nama_guru || '').toLowerCase().includes(q);
+            const matchNip = (g.nip || '').toLowerCase().includes(q);
+            return matchNama || matchNip;
+        });
+
+        dropdown.innerHTML = '';
+
+        if (currentList.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'p-2 text-center text-muted small';
+            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada data guru yang cocok';
+            dropdown.appendChild(emptyDiv);
+        } else {
+            currentList.forEach(g => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'dropdown-item py-2 px-3 border-bottom text-start w-100';
+                
+                let badges = [];
+                if (g.sebagai_wali_kelas && g.sebagai_wali_kelas !== '-') {
+                    badges.push(`<span class="badge bg-info-subtle text-info border border-info-subtle me-1" style="font-size:0.65rem;">WK: ${escapeHtml(g.sebagai_wali_kelas)}</span>`);
+                }
+                if (g.sebagai_guru_wali === 'Ya' || g.sebagai_guru_wali === 'ya') {
+                    badges.push(`<span class="badge bg-success-subtle text-success border border-success-subtle me-1" style="font-size:0.65rem;">Guru Wali</span>`);
+                }
+                if (g.pembina_ekstra && g.pembina_ekstra !== '-') {
+                    badges.push(`<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle me-1" style="font-size:0.65rem;">Ekstra: ${escapeHtml(g.pembina_ekstra)}</span>`);
+                }
+
+                btn.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-dark">${escapeHtml(g.nama_guru)}</span>
+                        <span class="badge bg-light text-secondary border small">${escapeHtml(g.nip || 'Tanpa NIP')}</span>
+                    </div>
+                    ${badges.length > 0 ? `<div class="mt-1">${badges.join('')}</div>` : ''}
+                `;
+
+                btn.addEventListener('click', () => {
+                    input.value = g.nama_guru;
+                    if (clearBtn) clearBtn.classList.remove('d-none');
+                    closeList();
+                    applyGuruToUserForm(g, config.mode);
+                });
+                dropdown.appendChild(btn);
+            });
+        }
+        dropdown.style.display = 'block';
     }
+
+    function openList() {
+        renderDropdown(input.value);
+    }
+
+    function closeList() {
+        dropdown.style.display = 'none';
+    }
+
+    input.addEventListener('focus', openList);
+    input.addEventListener('input', function() {
+        renderDropdown(this.value);
+        if (clearBtn) {
+            if (this.value) clearBtn.classList.remove('d-none');
+            else clearBtn.classList.add('d-none');
+        }
+
+        // Jika teks yang diketik persis sama dengan nama guru, langsung auto fill
+        const exactMatch = items.find(g => (g.nama_guru || '').toLowerCase() === this.value.trim().toLowerCase());
+        if (exactMatch) {
+            applyGuruToUserForm(exactMatch, config.mode);
+        }
+    });
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.style.display === 'block') {
+                closeList();
+            } else {
+                input.focus();
+                renderDropdown('');
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            input.value = '';
+            clearBtn.classList.add('d-none');
+            closeList();
+            input.focus();
+        });
+    }
+
+    // Klik di luar dropdown untuk menutup
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            closeList();
+        }
+    });
+
+    // Keyboard navigation (Esc to close)
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeList();
+        }
+    });
+}
+
+function autoFillGuruUser(sel) {
+    if (!sel || !sel.value) return;
+    try {
+        const g = typeof sel.value === 'string' ? JSON.parse(sel.value) : sel.value;
+        applyGuruToUserForm(g, 'add');
+    } catch (e) {}
 }
 
 function editUser(u) {
     document.getElementById('edit_u_id').value = u.id;
     document.getElementById('edit_u_nama').value = u.nama;
     document.getElementById('edit_u_nip').value = u.nip || '';
+
+    // Reset searchable input edit
+    const searchInputEdit = document.getElementById('inputGuruSearchEdit');
+    if (searchInputEdit) {
+        searchInputEdit.value = '';
+        const clearBtnEdit = document.getElementById('btnGuruClearEdit');
+        if (clearBtnEdit) clearBtnEdit.classList.add('d-none');
+    }
 
     const unInput = document.getElementById('edit_u_username');
     unInput.value = u.username;
@@ -765,7 +1033,7 @@ function toggleTablePassword(id, realPass, btn) {
     }
 }
 
-// Reset visibility password di modal tambah jika ditutup
+// Reset visibility password & searchable input di modal tambah jika ditutup
 const modalAddUserEl = document.getElementById('modalAddUser');
 if (modalAddUserEl) {
     modalAddUserEl.addEventListener('hidden.bs.modal', function () {
@@ -778,8 +1046,35 @@ if (modalAddUserEl) {
                 addPassIcon.classList.add('bi-eye');
             }
         }
+        const searchInputAdd = document.getElementById('inputGuruSearchAdd');
+        if (searchInputAdd) {
+            searchInputAdd.value = '';
+            const clearBtnAdd = document.getElementById('btnGuruClearAdd');
+            if (clearBtnAdd) clearBtnAdd.classList.add('d-none');
+        }
     });
 }
+
+// Inisialisasi Searchable Guru Picker saat DOM siap
+document.addEventListener('DOMContentLoaded', function() {
+    initSearchableGuruPicker({
+        inputId: 'inputGuruSearchAdd',
+        toggleBtnId: 'btnGuruToggleAdd',
+        clearBtnId: 'btnGuruClearAdd',
+        dropdownId: 'dropdownGuruListAdd',
+        containerId: 'comboboxGuruAddContainer',
+        mode: 'add'
+    });
+
+    initSearchableGuruPicker({
+        inputId: 'inputGuruSearchEdit',
+        toggleBtnId: 'btnGuruToggleEdit',
+        clearBtnId: 'btnGuruClearEdit',
+        dropdownId: 'dropdownGuruListEdit',
+        containerId: 'comboboxGuruEditContainer',
+        mode: 'edit'
+    });
+});
 </script>
 
 <?php require_once __DIR__ . '/views/footer.php'; ?>

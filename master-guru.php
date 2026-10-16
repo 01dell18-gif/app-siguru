@@ -60,7 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nama = trim($_POST['nama_guru'] ?? '');
         $nip = trim($_POST['nip'] ?? '');
         $guruWali = $_POST['sebagai_guru_wali'] ?? 'Tidak';
-        $waliKelas = $_POST['sebagai_wali_kelas'] ?? '-';
+        $waliKelas = trim($_POST['sebagai_wali_kelas'] ?? '-');
+        if ($waliKelas === '') $waliKelas = '-';
         
         if (isset($_POST['pembina_ekstra']) && is_array($_POST['pembina_ekstra'])) {
             $cleanPe = array_values(array_filter(array_map('trim', $_POST['pembina_ekstra']), function($v) {
@@ -86,7 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nama = trim($_POST['nama_guru'] ?? '');
         $nip = trim($_POST['nip'] ?? '');
         $guruWali = $_POST['sebagai_guru_wali'] ?? 'Tidak';
-        $waliKelas = $_POST['sebagai_wali_kelas'] ?? '-';
+        $waliKelas = trim($_POST['sebagai_wali_kelas'] ?? '-');
+        if ($waliKelas === '') $waliKelas = '-';
 
         if (isset($_POST['pembina_ekstra']) && is_array($_POST['pembina_ekstra'])) {
             $cleanPe = array_values(array_filter(array_map('trim', $_POST['pembina_ekstra']), function($v) {
@@ -378,14 +380,29 @@ $guruList = $stmt->fetchAll();
                             <option value="Ya">Ya</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Sebagai Wali Kelas (Pilih Kelas)</label>
-                        <select name="sebagai_wali_kelas" class="form-select">
-                            <option value="-">- Bukan Wali Kelas -</option>
-                            <?php foreach ($kelasList as $k): ?>
-                                <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="mb-3 position-relative" id="comboboxWaliKelasAdd">
+                        <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
+                            <span>Sebagai Wali Kelas (Pilih / Ketik Kelas)</span>
+                            <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" 
+                                   name="sebagai_wali_kelas" 
+                                   id="add_wali_kelas_input" 
+                                   class="form-control" 
+                                   placeholder="-- Ketik atau Pilih Kelas (- jika bukan wali) --" 
+                                   value="-" 
+                                   autocomplete="off"
+                                   list="list_kelas_guru">
+                            <button class="btn btn-outline-secondary" type="button" id="btnToggleWaliKelasAdd" title="Tampilkan semua kelas">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary d-none" type="button" id="btnClearWaliKelasAdd" title="Reset bukan wali kelas">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu shadow w-100 p-1" id="dropdownWaliKelasAdd" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -438,14 +455,28 @@ $guruList = $stmt->fetchAll();
                             <option value="Ya">Ya</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Sebagai Wali Kelas</label>
-                        <select name="sebagai_wali_kelas" id="edit_wk" class="form-select">
-                            <option value="-">- Bukan Wali Kelas -</option>
-                            <?php foreach ($kelasList as $k): ?>
-                                <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="mb-3 position-relative" id="comboboxWaliKelasEdit">
+                        <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
+                            <span>Sebagai Wali Kelas (Pilih / Ketik Kelas)</span>
+                            <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" 
+                                   name="sebagai_wali_kelas" 
+                                   id="edit_wk" 
+                                   class="form-control" 
+                                   placeholder="-- Ketik atau Pilih Kelas (- jika bukan wali) --" 
+                                   autocomplete="off"
+                                   list="list_kelas_guru">
+                            <button class="btn btn-outline-secondary" type="button" id="btnToggleWaliKelasEdit" title="Tampilkan semua kelas">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary d-none" type="button" id="btnClearWaliKelasEdit" title="Reset bukan wali kelas">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu shadow w-100 p-1" id="dropdownWaliKelasEdit" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -510,8 +541,119 @@ $guruList = $stmt->fetchAll();
     <input type="hidden" name="id" id="delete_id">
 </form>
 
+<datalist id="list_kelas_guru">
+    <option value="-">- Bukan Wali Kelas -</option>
+    <?php foreach ($kelasList as $k): ?>
+        <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
+    <?php endforeach; ?>
+</datalist>
+
 <script>
 const ekstraOptionsMaster = <?= json_encode($ekstraList) ?>;
+const kelasOptionsMaster = <?= json_encode(array_values($kelasList)) ?>;
+
+function initSearchableKelasPicker(config) {
+    const input = document.getElementById(config.inputId);
+    const toggleBtn = document.getElementById(config.toggleBtnId);
+    const clearBtn = document.getElementById(config.clearBtnId);
+    const dropdown = document.getElementById(config.dropdownId);
+    const container = document.getElementById(config.containerId);
+    const items = config.items || [];
+
+    if (!input || !dropdown || !container) return;
+
+    function renderDropdown(filterText = '') {
+        const q = filterText.trim().toLowerCase();
+        const currentList = items.filter(it => {
+            if (!q) return true;
+            return it.toLowerCase().includes(q);
+        });
+
+        dropdown.innerHTML = '';
+
+        if (config.allowNone) {
+            const noneBtn = document.createElement('button');
+            noneBtn.type = 'button';
+            noneBtn.className = 'dropdown-item py-2 px-3 border-bottom text-muted fst-italic text-start w-100';
+            noneBtn.innerHTML = '<i class="bi bi-dash-circle me-2 text-secondary"></i>- Bukan Wali Kelas -';
+            noneBtn.addEventListener('click', () => {
+                input.value = '-';
+                if (clearBtn) clearBtn.classList.remove('d-none');
+                closeList();
+                if (typeof config.onSelect === 'function') config.onSelect('-');
+            });
+            dropdown.appendChild(noneBtn);
+        }
+
+        if (currentList.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'p-2 text-center text-muted small';
+            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada kelas yang cocok';
+            dropdown.appendChild(emptyDiv);
+        } else {
+            currentList.forEach(k => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'dropdown-item py-1.5 px-3 border-bottom text-start w-100 d-flex justify-content-between align-items-center';
+                btn.innerHTML = `<span class="fw-semibold text-dark">${escapeHtml(k)}</span><i class="bi bi-chevron-right text-muted small"></i>`;
+                btn.addEventListener('click', () => {
+                    input.value = k;
+                    if (clearBtn) clearBtn.classList.remove('d-none');
+                    closeList();
+                    if (typeof config.onSelect === 'function') config.onSelect(k);
+                });
+                dropdown.appendChild(btn);
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function openList() {
+        renderDropdown(input.value === '-' ? '' : input.value);
+    }
+
+    function closeList() {
+        dropdown.style.display = 'none';
+    }
+
+    input.addEventListener('focus', openList);
+    input.addEventListener('input', function() {
+        renderDropdown(this.value);
+        if (clearBtn) {
+            if (this.value && this.value !== '-') clearBtn.classList.remove('d-none');
+            else clearBtn.classList.add('d-none');
+        }
+    });
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.style.display === 'block') {
+                closeList();
+            } else {
+                input.focus();
+                renderDropdown('');
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            input.value = config.allowNone ? '-' : '';
+            clearBtn.classList.add('d-none');
+            input.focus();
+            closeList();
+            if (typeof config.onSelect === 'function') config.onSelect(input.value);
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            closeList();
+        }
+    });
+}
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -563,6 +705,25 @@ function removeGuruEkstraRow(btn) {
 document.addEventListener('DOMContentLoaded', function () {
     addGuruEkstraRow('add', '-');
     
+    initSearchableKelasPicker({
+        containerId: 'comboboxWaliKelasAdd',
+        inputId: 'add_wali_kelas_input',
+        toggleBtnId: 'btnToggleWaliKelasAdd',
+        clearBtnId: 'btnClearWaliKelasAdd',
+        dropdownId: 'dropdownWaliKelasAdd',
+        items: kelasOptionsMaster,
+        allowNone: true
+    });
+    initSearchableKelasPicker({
+        containerId: 'comboboxWaliKelasEdit',
+        inputId: 'edit_wk',
+        toggleBtnId: 'btnToggleWaliKelasEdit',
+        clearBtnId: 'btnClearWaliKelasEdit',
+        dropdownId: 'dropdownWaliKelasEdit',
+        items: kelasOptionsMaster,
+        allowNone: true
+    });
+
     document.getElementById('modalTambahGuru')?.addEventListener('show.bs.modal', function () {
         const container = document.getElementById('containerGuruEkstraAdd');
         if (container && container.querySelectorAll('.guru-ekstra-row').length === 0) {
@@ -577,7 +738,13 @@ function editGuru(g) {
     document.getElementById('edit_nama').value = g.nama_guru;
     document.getElementById('edit_nip').value = g.nip;
     document.getElementById('edit_gw').value = g.sebagai_guru_wali;
-    document.getElementById('edit_wk').value = g.sebagai_wali_kelas;
+    document.getElementById('edit_wk').value = g.sebagai_wali_kelas || '-';
+    
+    const clearBtnEdit = document.getElementById('btnClearWaliKelasEdit');
+    if (clearBtnEdit) {
+        if (g.sebagai_wali_kelas && g.sebagai_wali_kelas !== '-') clearBtnEdit.classList.remove('d-none');
+        else clearBtnEdit.classList.add('d-none');
+    }
     
     const contEdit = document.getElementById('containerGuruEkstraEdit');
     if (contEdit) {

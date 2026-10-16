@@ -518,13 +518,29 @@ $muridList = $stmt->fetchAll();
                                 <option value="P">Perempuan (P)</option>
                             </select>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label fw-semibold small">Kelas</label>
-                            <select name="kelas" class="form-select" required>
-                                <?php foreach ($kelasList as $k): ?>
-                                    <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <div class="col-6 position-relative" id="comboboxMuridKelasAdd">
+                            <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
+                                <span>Kelas</span>
+                                <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" 
+                                       name="kelas" 
+                                       id="add_m_kelas" 
+                                       class="form-control" 
+                                       placeholder="Pilih / ketik kelas..." 
+                                       autocomplete="off" 
+                                       list="list_kelas_murid" 
+                                       required>
+                                <button class="btn btn-outline-secondary" type="button" id="btnToggleMuridKelasAdd" title="Tampilkan semua kelas">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary d-none" type="button" id="btnClearMuridKelasAdd" title="Hapus pilihan">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu shadow w-100 p-1" id="dropdownMuridKelasAdd" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -586,13 +602,29 @@ $muridList = $stmt->fetchAll();
                                 <option value="P">Perempuan (P)</option>
                             </select>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label fw-semibold small">Kelas</label>
-                            <select name="kelas" id="edit_m_kelas" class="form-select" required>
-                                <?php foreach ($kelasList as $k): ?>
-                                    <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <div class="col-6 position-relative" id="comboboxMuridKelasEdit">
+                            <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
+                                <span>Kelas</span>
+                                <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" 
+                                       name="kelas" 
+                                       id="edit_m_kelas" 
+                                       class="form-control" 
+                                       placeholder="Pilih / ketik kelas..." 
+                                       autocomplete="off" 
+                                       list="list_kelas_murid" 
+                                       required>
+                                <button class="btn btn-outline-secondary" type="button" id="btnToggleMuridKelasEdit" title="Tampilkan semua kelas">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary d-none" type="button" id="btnClearMuridKelasEdit" title="Hapus pilihan">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu shadow w-100 p-1" id="dropdownMuridKelasEdit" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -664,9 +696,135 @@ $muridList = $stmt->fetchAll();
     <input type="hidden" name="id" id="delete_m_id">
 </form>
 
+<datalist id="list_kelas_murid">
+    <?php foreach ($kelasList as $k): ?>
+        <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
+    <?php endforeach; ?>
+</datalist>
+
 <script>
 const guruClassMap = <?= json_encode($guruClassMap) ?>;
 const allSchoolClasses = <?= json_encode(getDaftarKelas()) ?>;
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function initSearchableKelasPicker(config) {
+    const input = document.getElementById(config.inputId);
+    const toggleBtn = document.getElementById(config.toggleBtnId);
+    const clearBtn = document.getElementById(config.clearBtnId);
+    const dropdown = document.getElementById(config.dropdownId);
+    const container = document.getElementById(config.containerId);
+    const items = config.items || [];
+
+    if (!input || !dropdown || !container) return;
+
+    function renderDropdown(filterText = '') {
+        const q = filterText.trim().toLowerCase();
+        const currentList = items.filter(it => {
+            if (!q) return true;
+            return it.toLowerCase().includes(q);
+        });
+
+        dropdown.innerHTML = '';
+
+        if (currentList.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'p-2 text-center text-muted small';
+            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada kelas yang cocok';
+            dropdown.appendChild(emptyDiv);
+        } else {
+            currentList.forEach(k => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'dropdown-item py-1.5 px-3 border-bottom text-start w-100 d-flex justify-content-between align-items-center';
+                btn.innerHTML = `<span class="fw-semibold text-dark">${escapeHtml(k)}</span><i class="bi bi-chevron-right text-muted small"></i>`;
+                btn.addEventListener('click', () => {
+                    input.value = k;
+                    if (clearBtn) clearBtn.classList.remove('d-none');
+                    closeList();
+                    if (typeof config.onSelect === 'function') config.onSelect(k);
+                });
+                dropdown.appendChild(btn);
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function openList() {
+        renderDropdown(input.value);
+    }
+
+    function closeList() {
+        dropdown.style.display = 'none';
+    }
+
+    input.addEventListener('focus', openList);
+    input.addEventListener('input', function() {
+        renderDropdown(this.value);
+        if (clearBtn) {
+            if (this.value) clearBtn.classList.remove('d-none');
+            else clearBtn.classList.add('d-none');
+        }
+    });
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.style.display === 'block') {
+                closeList();
+            } else {
+                input.focus();
+                renderDropdown('');
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            input.value = '';
+            clearBtn.classList.add('d-none');
+            input.focus();
+            closeList();
+            if (typeof config.onSelect === 'function') config.onSelect('');
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            closeList();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initSearchableKelasPicker({
+        containerId: 'comboboxMuridKelasAdd',
+        inputId: 'add_m_kelas',
+        toggleBtnId: 'btnToggleMuridKelasAdd',
+        clearBtnId: 'btnClearMuridKelasAdd',
+        dropdownId: 'dropdownMuridKelasAdd',
+        items: allSchoolClasses,
+        allowNone: false
+    });
+    initSearchableKelasPicker({
+        containerId: 'comboboxMuridKelasEdit',
+        inputId: 'edit_m_kelas',
+        toggleBtnId: 'btnToggleMuridKelasEdit',
+        clearBtnId: 'btnClearMuridKelasEdit',
+        dropdownId: 'dropdownMuridKelasEdit',
+        items: allSchoolClasses,
+        allowNone: false
+    });
+});
 
 function handleGuruFilterChange(selectedGuru) {
     const kelasSelect = document.getElementById('selectFilterKelas');
@@ -713,6 +871,11 @@ function editMurid(m) {
     document.getElementById('edit_m_nama').value = m.nama_murid;
     document.getElementById('edit_m_jk').value = m.jenis_kelamin;
     document.getElementById('edit_m_kelas').value = m.kelas;
+    const clearBtnEdit = document.getElementById('btnClearMuridKelasEdit');
+    if (clearBtnEdit) {
+        if (m.kelas) clearBtnEdit.classList.remove('d-none');
+        else clearBtnEdit.classList.add('d-none');
+    }
 
     const statuses = (m.status || '').split(',').map(s => s.trim());
     document.getElementById('edit_st_murid').checked = statuses.includes('Murid');
