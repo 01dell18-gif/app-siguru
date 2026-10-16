@@ -145,6 +145,7 @@ if not exist "uploads\bukti_ekstra" mkdir "uploads\bukti_ekstra"
 if not exist "uploads\foto_siswa" mkdir "uploads\foto_siswa"
 if not exist "uploads\guru_wali" mkdir "uploads\guru_wali"
 if not exist "uploads\wali" mkdir "uploads\wali"
+if not exist "uploads\kop" mkdir "uploads\kop"
 
 :: 6. Inisialisasi database jika file database belum ada
 if not exist "database\siguru.db" (

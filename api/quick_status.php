@@ -1,6 +1,8 @@
 <?php
 // api/quick_status.php - Update status terhubung siswa & sinkronisasi otomatis ke database
-header('Content-Type: application/json');
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+}
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../config/helper.php';

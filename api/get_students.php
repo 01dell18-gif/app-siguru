@@ -1,6 +1,8 @@
 <?php
 // api/get_students.php
-header('Content-Type: application/json');
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+}
 require_once __DIR__ . '/../config/database.php';
 
 $kelas = $_GET['kelas'] ?? '';
