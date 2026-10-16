@@ -524,7 +524,7 @@ $printUrl = 'print-laporan.php?' . http_build_query([
 
 <!-- Modal Edit Presensi Siswa -->
 <div class="modal fade" id="modalEditAbsen" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Edit Data Presensi Siswa</h5>
@@ -534,16 +534,18 @@ $printUrl = 'print-laporan.php?' . http_build_query([
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="id" id="edit_absen_id">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Nama Siswa</label>
-                        <input type="text" id="edit_absen_nama" class="form-control bg-light" readonly>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Nama Siswa</label>
+                            <input type="text" id="edit_absen_nama" class="form-control bg-light" readonly>
+                        </div>
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Tanggal Presensi</label>
                             <input type="date" name="tanggal" id="edit_absen_tanggal" class="form-control" required>
                         </div>
-                        <div class="col-6">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Status Kehadiran</label>
                             <select name="keterangan" id="edit_absen_ket" class="form-select fw-bold">
                                 <option value="H">H (Hadir)</option>
@@ -553,30 +555,32 @@ $printUrl = 'print-laporan.php?' . http_build_query([
                                 <option value="D">D (Dispensasi)</option>
                             </select>
                         </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Kelas</label>
+                            <select name="kelas" id="edit_absen_kelas" class="form-select">
+                                <?php foreach ($kelasList as $k): ?>
+                                    <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Kelas</label>
-                        <select name="kelas" id="edit_absen_kelas" class="form-select">
-                            <?php foreach ($kelasList as $k): ?>
-                                <option value="<?= htmlspecialchars($k) ?>"><?= htmlspecialchars($k) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Mata Pelajaran</label>
-                        <select name="mata_pelajaran" id="edit_absen_mapel" class="form-select">
-                            <?php foreach ($mapelList as $mp): ?>
-                                <option value="<?= htmlspecialchars($mp) ?>"><?= htmlspecialchars($mp) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Guru Pengampu</label>
-                        <select name="nama_guru" id="edit_absen_guru" class="form-select">
-                            <?php foreach ($guruList as $g): ?>
-                                <option value="<?= htmlspecialchars($g) ?>"><?= htmlspecialchars($g) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Mata Pelajaran</label>
+                            <select name="mata_pelajaran" id="edit_absen_mapel" class="form-select">
+                                <?php foreach ($mapelList as $mp): ?>
+                                    <option value="<?= htmlspecialchars($mp) ?>"><?= htmlspecialchars($mp) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Guru Pengampu</label>
+                            <select name="nama_guru" id="edit_absen_guru" class="form-select">
+                                <?php foreach ($guruList as $g): ?>
+                                    <option value="<?= htmlspecialchars($g) ?>"><?= htmlspecialchars($g) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">

@@ -470,7 +470,7 @@ $siswaEkstraList = $stmt->fetchAll();
 <?php if ($isSuper): ?>
 <!-- Modal Tambah Anggota Ekstra -->
 <div class="modal fade" id="modalAddEkstra" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Tambah Anggota Ekstra</h5>
@@ -507,23 +507,25 @@ $siswaEkstraList = $stmt->fetchAll();
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">NISN</label>
-                        <input type="text" name="nisn" id="add_e_nisn" class="form-control" required>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">NISN</label>
+                            <input type="text" name="nisn" id="add_e_nisn" class="form-control" required placeholder="0071234567">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Nama Siswa</label>
+                            <input type="text" name="nama_murid" id="add_e_nama" class="form-control" required placeholder="Nama Siswa">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Nama Siswa</label>
-                        <input type="text" name="nama_murid" id="add_e_nama" class="form-control" required>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Jenis Kelamin</label>
                             <select name="jenis_kelamin" id="add_e_jk" class="form-select">
                                 <option value="L">Laki-Laki (L)</option>
                                 <option value="P">Perempuan (P)</option>
                             </select>
                         </div>
-                        <div class="col-6">
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Kelas</label>
                             <input type="text" name="kelas" id="add_e_kelas" list="list_kelas" class="form-control" placeholder="Pilih / ketik kelas..." required>
                             <datalist id="list_kelas">
@@ -563,7 +565,7 @@ $siswaEkstraList = $stmt->fetchAll();
 
 <!-- Modal Edit Ekstra -->
 <div class="modal fade" id="modalEditEkstra" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Edit Data Siswa Ekstra</h5>
@@ -573,23 +575,25 @@ $siswaEkstraList = $stmt->fetchAll();
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="id" id="edit_e_id">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">NISN</label>
-                        <input type="text" name="nisn" id="edit_e_nisn" class="form-control" maxlength="10" required>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">NISN</label>
+                            <input type="text" name="nisn" id="edit_e_nisn" class="form-control" maxlength="10" required>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Nama Siswa</label>
+                            <input type="text" name="nama_murid" id="edit_e_nama" class="form-control" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Nama Siswa</label>
-                        <input type="text" name="nama_murid" id="edit_e_nama" class="form-control" required>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Jenis Kelamin</label>
                             <select name="jenis_kelamin" id="edit_e_jk" class="form-select">
                                 <option value="L">Laki-Laki (L)</option>
                                 <option value="P">Perempuan (P)</option>
                             </select>
                         </div>
-                        <div class="col-6">
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Kelas</label>
                             <input type="text" name="kelas" id="edit_e_kelas" list="list_kelas" class="form-control" placeholder="Pilih / ketik kelas..." required>
                         </div>
@@ -901,7 +905,7 @@ function renderPembinaInputHtml(ekstraName, selectedPembina = '') {
         `;
     } else {
         // Lebih dari 1 Guru Pembina: buat select dropdown agar bisa dipilih salah satu!
-        let opts = `<option value="">-- Pilih Salah Satu Guru Pembina --</option>`;
+        let opts = `<option value="">-- Pilih Guru Pembina --</option>`;
         pembinas.forEach(p => {
             const isSel = (selectedPembina && p.trim() === selectedPembina.trim());
             opts += `<option value="${escapeHtml(p)}" ${isSel ? 'selected' : ''}>${escapeHtml(p)}</option>`;

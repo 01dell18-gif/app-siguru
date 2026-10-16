@@ -356,7 +356,7 @@ $guruList = $stmt->fetchAll();
 
 <!-- Modal Tambah Guru -->
 <div class="modal fade" id="modalAddGuru" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Tambah Data Guru</h5>
@@ -365,44 +365,48 @@ $guruList = $stmt->fetchAll();
             <form method="POST" action="master-guru.php">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Nama Guru Lengkap</label>
-                        <input type="text" name="nama_guru" class="form-control" required placeholder="Contoh: Budi Prasetyo, M.Kom">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">NIP (Nomor Induk Pegawai)</label>
-                        <input type="text" name="nip" class="form-control" placeholder="19800101 200501 1 003">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Sebagai Guru Wali</label>
-                        <select name="sebagai_guru_wali" class="form-select">
-                            <option value="Tidak">Tidak</option>
-                            <option value="Ya">Ya</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 position-relative" id="comboboxWaliKelasAdd">
-                        <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
-                            <span>Sebagai Wali Kelas (Pilih / Ketik Kelas)</span>
-                            <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
-                            <input type="text" 
-                                   name="sebagai_wali_kelas" 
-                                   id="add_wali_kelas_input" 
-                                   class="form-control" 
-                                   placeholder="-- Ketik atau Pilih Kelas (- jika bukan wali) --" 
-                                   value="-" 
-                                   autocomplete="off"
-                                   list="list_kelas_guru">
-                            <button class="btn btn-outline-secondary" type="button" id="btnToggleWaliKelasAdd" title="Tampilkan semua kelas">
-                                <i class="bi bi-chevron-down"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary d-none" type="button" id="btnClearWaliKelasAdd" title="Reset bukan wali kelas">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Nama Guru Lengkap</label>
+                            <input type="text" name="nama_guru" class="form-control" required placeholder="Contoh: Budi Prasetyo, M.Kom">
                         </div>
-                        <div class="dropdown-menu shadow w-100 p-1" id="dropdownWaliKelasAdd" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">NIP (Nomor Induk Pegawai)</label>
+                            <input type="text" name="nip" class="form-control" placeholder="19800101 200501 1 003">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Sebagai Guru Wali</label>
+                            <select name="sebagai_guru_wali" class="form-select">
+                                <option value="Tidak">Tidak</option>
+                                <option value="Ya">Ya</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-12 position-relative" id="comboboxWaliKelasAdd">
+                            <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
+                                <span>Sebagai Wali Kelas (Pilih / Ketik Kelas)</span>
+                                <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" 
+                                       name="sebagai_wali_kelas" 
+                                       id="add_wali_kelas_input" 
+                                       class="form-control" 
+                                       placeholder="-- Ketik atau Pilih Kelas (- jika bukan wali) --" 
+                                       value="-" 
+                                       autocomplete="off"
+                                       list="list_kelas_guru">
+                                <button class="btn btn-outline-secondary" type="button" id="btnToggleWaliKelasAdd" title="Tampilkan semua kelas">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary d-none" type="button" id="btnClearWaliKelasAdd" title="Reset bukan wali kelas">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu shadow w-100 p-1" id="dropdownWaliKelasAdd" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -430,7 +434,7 @@ $guruList = $stmt->fetchAll();
 
 <!-- Modal Edit Guru -->
 <div class="modal fade" id="modalEditGuru" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Edit Data Guru</h5>
@@ -440,43 +444,47 @@ $guruList = $stmt->fetchAll();
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="id" id="edit_id">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Nama Guru Lengkap</label>
-                        <input type="text" name="nama_guru" id="edit_nama" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">NIP</label>
-                        <input type="text" name="nip" id="edit_nip" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Sebagai Guru Wali</label>
-                        <select name="sebagai_guru_wali" id="edit_gw" class="form-select">
-                            <option value="Tidak">Tidak</option>
-                            <option value="Ya">Ya</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 position-relative" id="comboboxWaliKelasEdit">
-                        <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
-                            <span>Sebagai Wali Kelas (Pilih / Ketik Kelas)</span>
-                            <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
-                            <input type="text" 
-                                   name="sebagai_wali_kelas" 
-                                   id="edit_wk" 
-                                   class="form-control" 
-                                   placeholder="-- Ketik atau Pilih Kelas (- jika bukan wali) --" 
-                                   autocomplete="off"
-                                   list="list_kelas_guru">
-                            <button class="btn btn-outline-secondary" type="button" id="btnToggleWaliKelasEdit" title="Tampilkan semua kelas">
-                                <i class="bi bi-chevron-down"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary d-none" type="button" id="btnClearWaliKelasEdit" title="Reset bukan wali kelas">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Nama Guru Lengkap</label>
+                            <input type="text" name="nama_guru" id="edit_nama" class="form-control" required>
                         </div>
-                        <div class="dropdown-menu shadow w-100 p-1" id="dropdownWaliKelasEdit" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">NIP</label>
+                            <input type="text" name="nip" id="edit_nip" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Sebagai Guru Wali</label>
+                            <select name="sebagai_guru_wali" id="edit_gw" class="form-select">
+                                <option value="Tidak">Tidak</option>
+                                <option value="Ya">Ya</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-12 position-relative" id="comboboxWaliKelasEdit">
+                            <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
+                                <span>Sebagai Wali Kelas (Pilih / Ketik Kelas)</span>
+                                <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" 
+                                       name="sebagai_wali_kelas" 
+                                       id="edit_wk" 
+                                       class="form-control" 
+                                       placeholder="-- Ketik atau Pilih Kelas (- jika bukan wali) --" 
+                                       autocomplete="off"
+                                       list="list_kelas_guru">
+                                <button class="btn btn-outline-secondary" type="button" id="btnToggleWaliKelasEdit" title="Tampilkan semua kelas">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary d-none" type="button" id="btnClearWaliKelasEdit" title="Reset bukan wali kelas">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu shadow w-100 p-1" id="dropdownWaliKelasEdit" style="max-height: 250px; overflow-y: auto; display: none; position: absolute; z-index: 1055;"></div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">

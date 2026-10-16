@@ -493,7 +493,7 @@ $muridList = $stmt->fetchAll();
 
 <!-- Modal Tambah Murid -->
 <div class="modal fade" id="modalAddMurid" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Tambah Data Siswa</h5>
@@ -502,23 +502,25 @@ $muridList = $stmt->fetchAll();
             <form method="POST" action="master-murid.php">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">NISN</label>
-                        <input type="text" name="nisn" class="form-control" required placeholder="0071234567">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">NISN</label>
+                            <input type="text" name="nisn" class="form-control" required placeholder="0071234567">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Nama Lengkap Siswa</label>
+                            <input type="text" name="nama_murid" class="form-control" required placeholder="Nama Siswa">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Nama Lengkap Siswa</label>
-                        <input type="text" name="nama_murid" class="form-control" required placeholder="Nama Siswa">
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Jenis Kelamin</label>
                             <select name="jenis_kelamin" class="form-select">
                                 <option value="L">Laki-Laki (L)</option>
                                 <option value="P">Perempuan (P)</option>
                             </select>
                         </div>
-                        <div class="col-6 position-relative" id="comboboxMuridKelasAdd">
+                        <div class="col-md-6 col-12 position-relative" id="comboboxMuridKelasAdd">
                             <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
                                 <span>Kelas</span>
                                 <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
@@ -576,7 +578,7 @@ $muridList = $stmt->fetchAll();
 
 <!-- Modal Edit Murid -->
 <div class="modal fade" id="modalEditMurid" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Edit Data Siswa</h5>
@@ -586,23 +588,25 @@ $muridList = $stmt->fetchAll();
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="id" id="edit_m_id">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">NISN</label>
-                        <input type="text" name="nisn" id="edit_m_nisn" class="form-control" required>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">NISN</label>
+                            <input type="text" name="nisn" id="edit_m_nisn" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label fw-semibold small">Nama Lengkap Siswa</label>
+                            <input type="text" name="nama_murid" id="edit_m_nama" class="form-control" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Nama Lengkap Siswa</label>
-                        <input type="text" name="nama_murid" id="edit_m_nama" class="form-control" required>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
                             <label class="form-label fw-semibold small">Jenis Kelamin</label>
                             <select name="jenis_kelamin" id="edit_m_jk" class="form-select">
                                 <option value="L">Laki-Laki (L)</option>
                                 <option value="P">Perempuan (P)</option>
                             </select>
                         </div>
-                        <div class="col-6 position-relative" id="comboboxMuridKelasEdit">
+                        <div class="col-md-6 col-12 position-relative" id="comboboxMuridKelasEdit">
                             <label class="form-label fw-semibold small d-flex justify-content-between align-items-center mb-1">
                                 <span>Kelas</span>
                                 <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
