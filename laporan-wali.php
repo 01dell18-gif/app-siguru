@@ -1,7 +1,15 @@
 <?php
 // laporan-wali.php - Laporan Kegiatan Wali Kelas
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/helper.php';
+
+requireAuth();
+if (!hasAccess('laporan_wali')) {
+    setFlash('danger', 'Anda tidak memiliki hak akses ke modul Laporan Wali Kelas.');
+    header("Location: dashboard.php");
+    exit;
+}
 
 $pdo = getDBConnection();
 $kelasList = getDaftarKelas();
@@ -15,9 +23,9 @@ if (!empty($filterTA) && !in_array($filterTA, $taList)) {
 $filterSemester = $_GET['semester'] ?? $settings['semester'];
 $filterKelas = $_GET['kelas'] ?? '';
 
-// Filter Nama Guru / Wali: Selain Super Admin, langsung terisi nama guru sesuai hak akses akun login
+// Filter Nama Guru / Wali: Super Admin & Pelihat dapat memilih guru, selain itu terkunci
 $currentUser = currentUser();
-if (!isSuperAdmin()) {
+if (!isSuperAdmin() && !isPelihat()) {
     $filterGuru = $currentUser['nama'] ?? '';
 } else {
     $filterGuru = $_GET['guru'] ?? '';
@@ -238,7 +246,7 @@ $printUrl = 'print-laporan.php?' . http_build_query([
             </div>
             <div class="col-md-4 col-6">
                 <label class="form-label small text-muted mb-0">Nama Guru / Wali</label>
-                <?php if (isSuperAdmin()): ?>
+                <?php if (isSuperAdmin() || isPelihat()): ?>
                     <select name="guru" class="form-select form-select-sm">
                         <option value="">Semua Wali Kelas</option>
                         <?php foreach ($guruList as $g): ?>

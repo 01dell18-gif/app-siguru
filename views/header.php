@@ -74,19 +74,39 @@ $flash = getFlash();
         <!-- User Role Avatar & Dropdown (Ikon Avatar Saja) -->
         <div class="dropdown">
             <button class="btn btn-light btn-sm border px-2 py-1 d-flex align-items-center gap-1.5 dropdown-toggle shadow-xs" style="height: 32px; border-radius: 6px;" data-bs-toggle="dropdown" title="Akun: <?= htmlspecialchars($user['nama']) ?> (<?= htmlspecialchars($user['hak_akses']) ?>)">
-                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 22px; height: 22px; font-size: 0.72rem;">
-                    <?= strtoupper(substr($user['nama'] ?: 'U', 0, 1)) ?>
-                </div>
+                <?php if (!empty($user['foto'])): ?>
+                    <img src="<?= htmlspecialchars(formatPhotoUrl($user['foto'])) ?>" alt="Avatar" class="rounded-circle" style="width: 22px; height: 22px; object-fit: cover; border: 1px solid #cbd5e1;">
+                <?php else: ?>
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 22px; height: 22px; font-size: 0.72rem;">
+                        <?= strtoupper(substr($user['nama'] ?: 'U', 0, 1)) ?>
+                    </div>
+                <?php endif; ?>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border rounded-3 mt-1 py-1" style="font-size: 0.82rem;">
                 <li class="px-3 py-2 border-bottom bg-light">
-                    <div class="fw-bold text-dark"><?= htmlspecialchars($user['nama']) ?></div>
-                    <div class="small text-muted" style="font-size: 0.74rem;">NIP: <?= htmlspecialchars($user['nip'] ?: '-') ?></div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <?php if (!empty($user['foto'])): ?>
+                            <img src="<?= htmlspecialchars(formatPhotoUrl($user['foto'])) ?>" alt="Avatar" class="rounded-circle shadow-xs" style="width: 38px; height: 38px; object-fit: cover; border: 1px solid #cbd5e1;">
+                        <?php else: ?>
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-xs" style="width: 38px; height: 38px; font-size: 1.1rem;">
+                                <?= strtoupper(substr($user['nama'] ?: 'U', 0, 1)) ?>
+                            </div>
+                        <?php endif; ?>
+                        <div class="overflow-hidden">
+                            <div class="fw-bold text-dark text-truncate" style="max-width: 170px;"><?= htmlspecialchars($user['nama']) ?></div>
+                            <div class="small text-muted font-monospace" style="font-size: 0.74rem;">NIP: <?= htmlspecialchars($user['nip'] ?: '-') ?></div>
+                        </div>
+                    </div>
                     <div class="badge bg-primary-subtle text-primary mt-1"><?= htmlspecialchars($user['hak_akses']) ?></div>
                 </li>
                 <li>
                     <a class="dropdown-item py-1.5" href="profil.php">
                         <i class="bi bi-person-gear me-2 text-primary"></i>Edit Profil Saya
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-1.5" href="index.php" target="_blank">
+                        <i class="bi bi-house-door me-2 text-primary"></i>Halaman Publik (Landing Page)
                     </a>
                 </li>
                 <?php if (isSuperAdmin()): ?>

@@ -1,7 +1,15 @@
 <?php
 // laporan-jurnal.php - Laporan Jurnal Mengajar Guru
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/helper.php';
+
+requireAuth();
+if (!hasAccess('laporan_jurnal')) {
+    setFlash('danger', 'Anda tidak memiliki hak akses ke modul Laporan Jurnal.');
+    header("Location: dashboard.php");
+    exit;
+}
 
 $pdo = getDBConnection();
 $kelasList = getDaftarKelas();
@@ -18,9 +26,9 @@ $filterSemester = $_GET['semester'] ?? $settings['semester'];
 $filterKelas = $_GET['kelas'] ?? '';
 $filterMapel = $_GET['mapel'] ?? '';
 
-// Filter Nama Guru: Selain Super Admin, langsung terisi nama guru sesuai hak akses akun login
+// Filter Nama Guru: Super Admin & Pelihat dapat memilih guru, pengajar terkunci pada namanya
 $currentUser = currentUser();
-if (!isSuperAdmin()) {
+if (!isSuperAdmin() && !isPelihat()) {
     $filterGuru = $currentUser['nama'] ?? '';
 } else {
     $filterGuru = $_GET['guru'] ?? '';
@@ -309,7 +317,7 @@ $printUrl = 'print-laporan.php?' . http_build_query([
             </div>
             <div class="col-md-2 col-6">
                 <label class="form-label small text-muted mb-0">Nama Guru</label>
-                <?php if (isSuperAdmin()): ?>
+                <?php if (isSuperAdmin() || isPelihat()): ?>
                     <select name="guru" class="form-select form-select-sm">
                         <option value="">Semua Guru</option>
                         <?php foreach ($guruList as $g): ?>

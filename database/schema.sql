@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS data_user (
     password TEXT NOT NULL,
     hak_akses TEXT NOT NULL,
     nama TEXT NOT NULL,
-    nip TEXT
+    nip TEXT,
+    foto TEXT
 );
 
 -- 3. Tabel Data Guru

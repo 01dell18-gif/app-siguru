@@ -11,6 +11,7 @@ desktop.ini
 
 # Test backup files
 *.testbackup
+*.bak
 
 # Ensure SQLite default DB is tracked so it works out of the box when cloned
 !database/siguru.db

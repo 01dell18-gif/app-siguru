@@ -173,20 +173,20 @@ echo.
 echo ========================================================
 echo   SERVER BERHASIL DIAKTIFKAN! APLIKASI SIAP DIGUNAKAN
 echo ========================================================
-echo   [AKSES KOMPUTER INI]  : http://localhost:!PORT!/login.php
-echo   [AKSES PERANGKAT LAIN] : http://!LOCAL_IP!:!PORT!/login.php
+echo   [AKSES KOMPUTER INI]  : http://localhost:!PORT!/
+echo   [AKSES PERANGKAT LAIN] : http://!LOCAL_IP!:!PORT!/
 echo ========================================================
 echo   * Perangkat lain (HP/Laptop) wajib berada di Wi-Fi/LAN yang sama.
 echo   * Jika perangkat lain tidak bisa mengakses:
 echo     - Pastikan jaringan Wi-Fi diatur ke 'Private network'.
 echo     - Izinkan PHP pada pop-up Windows Firewall jika muncul.
-echo   * Browser akan terbuka otomatis dalam 2 detik.
+echo   * Browser akan terbuka otomatis menuju Halaman Utama (SIGURU).
 echo   * Tekan [Ctrl + C] di jendela ini untuk mematikan server.
 echo ========================================================
 echo.
 
-:: 8. Buka browser otomatis dengan jeda 2 detik (menggunakan ping tanpa isu input redirection)
-start "" cmd /c "ping -n 3 127.0.0.1 >nul & start http://localhost:!PORT!/login.php"
+:: 8. Buka browser otomatis dengan jeda 2 detik (mengarah langsung ke Halaman Utama)
+start "" cmd /c "ping -n 3 127.0.0.1 >nul & start http://localhost:!PORT!/"
 
 :: 9. Jalankan Web Server PHP (bind ke 0.0.0.0 agar dapat diakses dari PC/HP lain di LAN)
 "!PHP_CMD!" -S 0.0.0.0:!PORT!

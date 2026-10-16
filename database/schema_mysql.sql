@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS `data_user` (
     `password` VARCHAR(255) NOT NULL,
     `hak_akses` VARCHAR(50) NOT NULL,
     `nama` VARCHAR(255) NOT NULL,
-    `nip` VARCHAR(50)
+    `nip` VARCHAR(50),
+    `foto` TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 3. Tabel Data Guru

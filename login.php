@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['nama'] = $user['nama'];
                     $_SESSION['nip'] = $user['nip'];
                     $_SESSION['hak_akses'] = $user['hak_akses'];
+                    $_SESSION['foto'] = $user['foto'] ?? '';
 
                     setFlash('success', 'Selamat datang, ' . $user['nama'] . '!');
                     header("Location: dashboard.php");
@@ -715,6 +716,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <img src="<?= htmlspecialchars($settings['logo'] ?? 'assets/images/logo.png') ?>" alt="Logo" class="mb-2" style="width: 48px; height: 48px; object-fit: contain;">
                         <h6 class="fw-bold text-dark mb-0"><?= htmlspecialchars($settings['nama_sekolah'] ?? 'SMK FYJ') ?></h6>
                         <small class="text-primary fw-bold">SIGURU — Sistem Informasi Guru</small>
+                    </div>
+
+                    <!-- Navigasi Kembali ke Beranda Publik -->
+                    <div class="mb-3">
+                        <a href="index.php" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-xs d-inline-flex align-items-center gap-1.5 text-secondary">
+                            <i class="bi bi-arrow-left"></i>
+                            <span>Kembali ke Beranda</span>
+                        </a>
                     </div>
 
                     <!-- Header Card -->

@@ -175,23 +175,79 @@ $pageTitle = 'Master Data Siswa';
 require_once __DIR__ . '/views/header.php';
 require_once __DIR__ . '/views/sidebar.php';
 
-// 3. Filter & Pagination
-$filterKelas = trim($_GET['kelas'] ?? '');
+$user = currentUser();
+$isSuper = isSuperAdmin();
+
+// Ambil daftar guru dari data_guru
+$guruList = $pdo->query("SELECT nama_guru FROM data_guru ORDER BY nama_guru ASC")->fetchAll(PDO::FETCH_COLUMN);
+
+// Petakan kelas yang diampu oleh tiap guru untuk dropdown dinamis
+$guruClassMap = [];
+foreach ($guruList as $gName) {
+    $guruClassMap[$gName] = getKelasByGuru($gName);
+}
+
+// 3. Filter Guru & Kelas Sesuai Hak Akses
 $search = trim($_GET['q'] ?? '');
 $rawLimit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
 $limit = in_array($rawLimit, [10, 20, 50, 100, 250, 500]) ? $rawLimit : 10;
 $page = max(1, (int)($_GET['page'] ?? 1));
 $offset = ($page - 1) * $limit;
 
+if (!$isSuper) {
+    // Pengajar (Guru / Wali Kelas): Nama guru terkunci sesuai akun login
+    $filterGuru = $user['nama'] ?? '';
+    $availableKelas = getKelasByGuru($filterGuru);
+
+    if (empty($availableKelas)) {
+        // Jika tidak mengampu kelas, filternya dikosongkan dan tidak dapat memilih kelas
+        $filterKelas = '__NONE__';
+    } else {
+        // Otomatis terisi kelas sesuai gurunya
+        $reqKelas = trim($_GET['kelas'] ?? '');
+        if (!empty($reqKelas) && in_array($reqKelas, $availableKelas)) {
+            $filterKelas = $reqKelas;
+        } else {
+            $filterKelas = $availableKelas[0]; // Terisi otomatis kelas pertama guru tersebut
+        }
+    }
+} else {
+    // Super Admin dapat memilih nama guru atau semua guru
+    $filterGuru = trim($_GET['guru'] ?? '');
+    if (!empty($filterGuru)) {
+        $availableKelas = $guruClassMap[$filterGuru] ?? getKelasByGuru($filterGuru);
+        $reqKelas = trim($_GET['kelas'] ?? '');
+        if (!empty($reqKelas) && in_array($reqKelas, $availableKelas)) {
+            $filterKelas = $reqKelas;
+        } elseif (!empty($availableKelas)) {
+            $filterKelas = $reqKelas ?: $availableKelas[0]; // Terisi otomatis kelas guru tersebut
+        } else {
+            $filterKelas = '';
+        }
+    } else {
+        $availableKelas = getDaftarKelas();
+        $filterKelas = trim($_GET['kelas'] ?? '');
+    }
+}
+
 $whereClauses = [];
 $params = [];
 
-if (!empty($filterKelas)) {
-    $whereClauses[] = "kelas = ?";
+if ($filterKelas === '__NONE__') {
+    $whereClauses[] = "1 = 0"; // Tidak menampilkan siswa jika guru tidak mengampu kelas
+} elseif (!empty($filterKelas)) {
+    $whereClauses[] = "m.kelas = ?";
     $params[] = $filterKelas;
+} elseif (!empty($filterGuru) && !empty($availableKelas)) {
+    $inQ = implode(',', array_fill(0, count($availableKelas), '?'));
+    $whereClauses[] = "m.kelas IN ($inQ)";
+    foreach ($availableKelas as $ck) {
+        $params[] = $ck;
+    }
 }
+
 if (!empty($search)) {
-    $whereClauses[] = "(nama_murid LIKE ? OR nisn LIKE ?)";
+    $whereClauses[] = "(m.nama_murid LIKE ? OR m.nisn LIKE ?)";
     $params[] = "%$search%";
     $params[] = "%$search%";
 }
@@ -218,7 +274,7 @@ $muridList = $stmt->fetchAll();
             <button class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddMurid">
                 <i class="bi bi-person-plus-fill me-1"></i> Tambah Siswa
             </button>
-            <a href="master-murid.php?export=xlsx" class="btn btn-outline-success rounded-pill px-3 btn-sm">
+            <a href="master-murid.php?<?= http_build_query(array_merge($_GET, ['export' => 'xlsx'])) ?>" class="btn btn-outline-success rounded-pill px-3 btn-sm">
                 <i class="bi bi-file-earmark-excel me-1"></i> Export Excel (.xlsx)
             </a>
             <a href="master-murid.php?template=xlsx" class="btn btn-outline-secondary rounded-pill px-3 btn-sm" title="Unduh template Excel dengan pedoman data contoh (dummy)">
@@ -232,31 +288,68 @@ $muridList = $stmt->fetchAll();
 
     <!-- Filter & Search Bar -->
     <div class="card card-table p-3 mb-3">
-        <form method="GET" class="row g-2 align-items-center">
-            <div class="col-md-4">
+        <form method="GET" id="formFilterMurid" class="row g-2 align-items-center">
+            <div class="col-md-3 col-12">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
                     <input type="text" name="q" class="form-control" placeholder="Cari NISN atau nama siswa..." value="<?= htmlspecialchars($search) ?>">
                 </div>
             </div>
-            <div class="col-6 col-md-3">
-                <select name="kelas" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Semua Kelas</option>
-                    <?php foreach ($kelasList as $k): ?>
-                        <option value="<?= htmlspecialchars($k) ?>" <?= $filterKelas === $k ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
-                    <?php endforeach; ?>
-                </select>
+
+            <!-- Filter Guru -->
+            <div class="col-md-3 col-sm-6 col-12">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-secondary"><i class="bi bi-person-badge"></i></span>
+                    <?php if ($isSuper): ?>
+                        <select name="guru" id="selectFilterGuru" class="form-select form-select-sm" onchange="handleGuruFilterChange(this.value)">
+                            <option value="">Semua Guru</option>
+                            <?php foreach ($guruList as $g): ?>
+                                <option value="<?= htmlspecialchars($g) ?>" <?= $filterGuru === $g ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($g) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php else: ?>
+                        <input type="text" class="form-control bg-light fw-semibold text-dark" value="🔒 <?= htmlspecialchars($filterGuru) ?>" readonly title="Terkunci sesuai akun pengajar aktif">
+                        <input type="hidden" name="guru" value="<?= htmlspecialchars($filterGuru) ?>">
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="col-6 col-md-2">
+
+            <!-- Filter Kelas (Otomatis Terisi Sesuai Guru) -->
+            <div class="col-md-3 col-sm-6 col-12">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-secondary"><i class="bi bi-mortarboard"></i></span>
+                    <?php if (!$isSuper && empty($availableKelas)): ?>
+                        <select name="kelas" class="form-select form-select-sm bg-light text-muted" disabled title="Pengajar tidak mengampu kelas aktif">
+                            <option value="">(Tidak Mengampu Kelas)</option>
+                        </select>
+                    <?php else: ?>
+                        <select name="kelas" id="selectFilterKelas" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <?php if ($isSuper && empty($filterGuru)): ?>
+                                <option value="">Semua Kelas</option>
+                            <?php endif; ?>
+                            <?php foreach ($availableKelas as $k): ?>
+                                <option value="<?= htmlspecialchars($k) ?>" <?= $filterKelas === $k ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($k) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="col-md-1 col-6">
                 <select name="limit" class="form-select form-select-sm" onchange="this.form.submit()">
                     <?php foreach ([10, 20, 50, 100, 250, 500] as $opt): ?>
-                        <option value="<?= $opt ?>" <?= $limit == $opt ? 'selected' : '' ?>><?= $opt ?> data / hal</option>
+                        <option value="<?= $opt ?>" <?= $limit == $opt ? 'selected' : '' ?>><?= $opt ?>/hal</option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-12 col-md-3 d-flex gap-2">
+
+            <div class="col-md-2 col-6 d-flex gap-2">
                 <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">Filter</button>
-                <?php if (!empty($search) || !empty($filterKelas)): ?>
+                <?php if (!empty($search) || ($isSuper && !empty($filterGuru)) || (!empty($filterKelas) && $filterKelas !== '__NONE__')): ?>
                     <a href="master-murid.php" class="btn btn-outline-secondary btn-sm rounded-pill">Reset</a>
                 <?php endif; ?>
             </div>
@@ -281,7 +374,9 @@ $muridList = $stmt->fetchAll();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($muridList)): ?>
+                    <?php if ($filterKelas === '__NONE__'): ?>
+                        <tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-info-circle me-1 text-primary"></i> Anda tidak tercatat mengampu kelas aktif saat ini. Filter kelas dikosongkan.</td></tr>
+                    <?php elseif (empty($muridList)): ?>
                         <tr><td colspan="7" class="text-center text-muted py-4">Data siswa tidak ditemukan.</td></tr>
                     <?php else: 
                         $no = $offset + 1;
@@ -555,6 +650,48 @@ $muridList = $stmt->fetchAll();
 </form>
 
 <script>
+const guruClassMap = <?= json_encode($guruClassMap) ?>;
+const allSchoolClasses = <?= json_encode(getDaftarKelas()) ?>;
+
+function handleGuruFilterChange(selectedGuru) {
+    const kelasSelect = document.getElementById('selectFilterKelas');
+    if (!kelasSelect) return;
+
+    kelasSelect.innerHTML = '';
+
+    if (!selectedGuru) {
+        const optAll = document.createElement('option');
+        optAll.value = '';
+        optAll.textContent = 'Semua Kelas';
+        kelasSelect.appendChild(optAll);
+
+        allSchoolClasses.forEach(function(k) {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            kelasSelect.appendChild(opt);
+        });
+    } else {
+        const classes = guruClassMap[selectedGuru] || [];
+        if (classes.length === 0) {
+            const optNone = document.createElement('option');
+            optNone.value = '';
+            optNone.textContent = '(Tidak Mengampu Kelas)';
+            kelasSelect.appendChild(optNone);
+        } else {
+            classes.forEach(function(k, idx) {
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.textContent = k;
+                if (idx === 0) opt.selected = true;
+                kelasSelect.appendChild(opt);
+            });
+        }
+    }
+
+    document.getElementById('formFilterMurid').submit();
+}
+
 function editMurid(m) {
     document.getElementById('edit_m_id').value = m.id;
     document.getElementById('edit_m_nisn').value = m.nisn;

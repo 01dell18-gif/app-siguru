@@ -36,7 +36,7 @@ $isPengaturanActive = in_array($currentPage, ['pengaturan.php', 'user-management
         </a>
 
         <!-- 2. Grup Master Data -->
-        <?php if (hasAccess('master_guru') || hasAccess('master_murid')): ?>
+        <?php if (hasAccess('master_guru') || hasAccess('master_murid') || hasAccess('master_bimbingan') || hasAccess('master_ekstra')): ?>
         <div class="menu-category">Data Master</div>
         <div class="accordion sidebar-accordion" id="accordionMaster">
             <div class="accordion-item bg-transparent border-0">
@@ -49,18 +49,29 @@ $isPengaturanActive = in_array($currentPage, ['pengaturan.php', 'user-management
                 </button>
                 <div id="collapseMaster" class="accordion-collapse collapse <?= $isMasterActive ? 'show' : '' ?>" data-bs-parent="#accordionMaster">
                     <div class="accordion-body">
+                        <?php if (hasAccess('master_guru')): ?>
                         <a href="master-guru.php" class="nav-link-custom <?= $currentPage === 'master-guru.php' ? 'active' : '' ?>">
                             <i class="bi bi-person-badge"></i> <span>Data Guru</span>
                         </a>
+                        <?php endif; ?>
+
+                        <?php if (hasAccess('master_murid')): ?>
                         <a href="master-murid.php" class="nav-link-custom <?= $currentPage === 'master-murid.php' ? 'active' : '' ?>">
                             <i class="bi bi-people"></i> <span>Data Siswa</span>
                         </a>
+                        <?php endif; ?>
+
+                        <?php if (hasAccess('master_bimbingan')): ?>
                         <a href="master-bimbingan.php" class="nav-link-custom <?= $currentPage === 'master-bimbingan.php' ? 'active' : '' ?>">
                             <i class="bi bi-person-heart"></i> <span>Data Siswa Bimbingan</span>
                         </a>
+                        <?php endif; ?>
+
+                        <?php if (hasAccess('master_ekstra')): ?>
                         <a href="master-ekstra.php" class="nav-link-custom <?= $currentPage === 'master-ekstra.php' ? 'active' : '' ?>">
                             <i class="bi bi-trophy"></i> <span>Siswa Ekstrakurikuler</span>
                         </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -117,7 +128,7 @@ $isPengaturanActive = in_array($currentPage, ['pengaturan.php', 'user-management
         <?php endif; ?>
 
         <!-- 4. Grup Laporan -->
-        <?php if (hasAccess('laporan')): ?>
+        <?php if (hasAccess('laporan_absen') || hasAccess('laporan_jurnal') || hasAccess('laporan_wali') || hasAccess('laporan_guruwali') || hasAccess('laporan_ekstra')): ?>
         <div class="menu-category">Rekap & Laporan</div>
         <div class="accordion sidebar-accordion" id="accordionLaporan">
             <div class="accordion-item bg-transparent border-0">
@@ -130,21 +141,35 @@ $isPengaturanActive = in_array($currentPage, ['pengaturan.php', 'user-management
                 </button>
                 <div id="collapseLaporan" class="accordion-collapse collapse <?= $isLaporanActive ? 'show' : '' ?>" data-bs-parent="#accordionLaporan">
                     <div class="accordion-body">
+                        <?php if (hasAccess('laporan_absen')): ?>
                         <a href="laporan-absen.php" class="nav-link-custom <?= $currentPage === 'laporan-absen.php' ? 'active' : '' ?>">
                             <i class="bi bi-file-earmark-check"></i> <span>Laporan Kehadiran</span>
                         </a>
+                        <?php endif; ?>
+
+                        <?php if (hasAccess('laporan_jurnal')): ?>
                         <a href="laporan-jurnal.php" class="nav-link-custom <?= $currentPage === 'laporan-jurnal.php' ? 'active' : '' ?>">
                             <i class="bi bi-journal-text"></i> <span>Laporan Jurnal Guru</span>
                         </a>
+                        <?php endif; ?>
+
+                        <?php if (hasAccess('laporan_wali')): ?>
                         <a href="laporan-wali.php" class="nav-link-custom <?= $currentPage === 'laporan-wali.php' ? 'active' : '' ?>">
                             <i class="bi bi-clipboard-data"></i> <span>Laporan Wali Kelas</span>
                         </a>
+                        <?php endif; ?>
+
+                        <?php if (hasAccess('laporan_guruwali')): ?>
                         <a href="laporan-guruwali.php" class="nav-link-custom <?= $currentPage === 'laporan-guruwali.php' ? 'active' : '' ?>">
                             <i class="bi bi-heart-pulse"></i> <span>Laporan Guru Wali</span>
                         </a>
+                        <?php endif; ?>
+
+                        <?php if (hasAccess('laporan_ekstra')): ?>
                         <a href="laporan-ekstra.php" class="nav-link-custom <?= $currentPage === 'laporan-ekstra.php' ? 'active' : '' ?>">
                             <i class="bi bi-award"></i> <span>Laporan Ekstrakurikuler</span>
                         </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -182,9 +207,13 @@ $isPengaturanActive = in_array($currentPage, ['pengaturan.php', 'user-management
     <div class="sidebar-user-card p-2 mx-2 mb-2 rounded-2">
         <div class="d-flex align-items-center justify-content-between">
             <a href="profil.php" class="d-flex align-items-center gap-2 text-decoration-none overflow-hidden" title="Profil Saya">
-                <div class="avatar-sidebar rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.75rem; flex-shrink: 0;">
-                    <?= strtoupper(substr($currentUserData['nama'] ?? 'U', 0, 1)) ?>
-                </div>
+                <?php if (!empty($currentUserData['foto'])): ?>
+                    <img src="<?= htmlspecialchars(formatPhotoUrl($currentUserData['foto'])) ?>" alt="Avatar" class="avatar-sidebar rounded-circle shadow-xs" style="width: 32px; height: 32px; object-fit: cover; flex-shrink: 0; border: 1.5px solid rgba(255,255,255,0.3);">
+                <?php else: ?>
+                    <div class="avatar-sidebar rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.75rem; flex-shrink: 0;">
+                        <?= strtoupper(substr($currentUserData['nama'] ?? 'U', 0, 1)) ?>
+                    </div>
+                <?php endif; ?>
                 <div class="overflow-hidden" style="max-width: 125px;">
                     <div class="text-white fw-semibold small text-truncate" style="font-size: 0.8rem; line-height: 1.2;"><?= htmlspecialchars($currentUserData['nama'] ?? 'Pengguna') ?></div>
                     <div class="text-white-50 text-truncate" style="font-size: 0.68rem; line-height: 1.1;"><?= htmlspecialchars($currentUserData['hak_akses'] ?? 'Guru') ?></div>

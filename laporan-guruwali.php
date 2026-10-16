@@ -1,7 +1,15 @@
 <?php
 // laporan-guruwali.php - Laporan Bimbingan Guru Wali
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/helper.php';
+
+requireAuth();
+if (!hasAccess('laporan_guruwali')) {
+    setFlash('danger', 'Anda tidak memiliki hak akses ke modul Laporan Guru Wali.');
+    header("Location: dashboard.php");
+    exit;
+}
 
 $pdo = getDBConnection();
 $guruList = $pdo->query("SELECT nama_guru FROM data_guru ORDER BY nama_guru ASC")->fetchAll(PDO::FETCH_COLUMN);
@@ -13,9 +21,9 @@ if (!empty($filterTA) && !in_array($filterTA, $taList)) {
 }
 $filterSemester = $_GET['semester'] ?? $settings['semester'];
 
-// Filter Nama Guru Wali: Selain Super Admin, langsung terisi nama guru sesuai hak akses akun login
+// Filter Nama Guru Wali: Super Admin & Pelihat dapat memilih guru, selain itu terkunci
 $currentUser = currentUser();
-if (!isSuperAdmin()) {
+if (!isSuperAdmin() && !isPelihat()) {
     $filterGuru = $currentUser['nama'] ?? '';
 } else {
     $filterGuru = $_GET['guru'] ?? '';
@@ -224,7 +232,7 @@ $printUrl = 'print-laporan.php?' . http_build_query([
             </div>
             <div class="col-md-3 col-6">
                 <label class="form-label small text-muted mb-0">Guru Wali</label>
-                <?php if (isSuperAdmin()): ?>
+                <?php if (isSuperAdmin() || isPelihat()): ?>
                     <select name="guru" class="form-select form-select-sm">
                         <option value="">Semua Guru Wali</option>
                         <?php foreach ($guruList as $g): ?>

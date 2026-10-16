@@ -1,7 +1,15 @@
 <?php
 // laporan-ekstra.php - Laporan Kegiatan Ekstrakurikuler
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/auth.php';
 require_once __DIR__ . '/config/helper.php';
+
+requireAuth();
+if (!hasAccess('laporan_ekstra')) {
+    setFlash('danger', 'Anda tidak memiliki hak akses ke modul Laporan Ekstrakurikuler.');
+    header("Location: dashboard.php");
+    exit;
+}
 
 $pdo = getDBConnection();
 $ekstraList = getDaftarEkstra();
@@ -15,9 +23,9 @@ if (!empty($filterTA) && !in_array($filterTA, $taList)) {
 $filterSemester = $_GET['semester'] ?? $settings['semester'];
 $filterEkstra = $_GET['ekstra'] ?? '';
 
-// Filter Nama Guru / Pembina: Selain Super Admin, langsung terisi nama guru sesuai hak akses akun login
+// Filter Nama Guru / Pembina: Super Admin & Pelihat dapat memilih guru, selain itu terkunci
 $currentUser = currentUser();
-if (!isSuperAdmin()) {
+if (!isSuperAdmin() && !isPelihat()) {
     $filterGuru = $currentUser['nama'] ?? '';
 } else {
     $filterGuru = $_GET['guru'] ?? '';
@@ -242,7 +250,7 @@ $printUrl = 'print-laporan.php?' . http_build_query([
             </div>
             <div class="col-md-3 col-6">
                 <label class="form-label small text-muted mb-0">Nama Guru / Pembina</label>
-                <?php if (isSuperAdmin()): ?>
+                <?php if (isSuperAdmin() || isPelihat()): ?>
                     <select name="guru" class="form-select form-select-sm">
                         <option value="">Semua Pembina</option>
                         <?php foreach ($guruList as $g): ?>
