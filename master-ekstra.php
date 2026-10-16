@@ -661,6 +661,12 @@ $siswaEkstraList = $stmt->fetchAll();
 </form>
 <?php endif; ?>
 
+<datalist id="list_ekstra_options">
+    <?php foreach ($ekstraList as $e): ?>
+        <option value="<?= htmlspecialchars($e) ?>"><?= htmlspecialchars($e) ?></option>
+    <?php endforeach; ?>
+</datalist>
+
 <script>
 const eligibleStudentsEkstra = <?= json_encode($eligibleStudents, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
@@ -912,25 +918,53 @@ function renderPembinaInputHtml(ekstraName, selectedPembina = '') {
 }
 
 function createEkstraRowHtml(type, selectedValue = '', selectedPembina = '') {
-    let optionsHtml = '<option value="">-- Pilih Cabang Ekstrakurikuler --</option>';
-
-    ekstraOptionsData.forEach(item => {
-        const isSel = (item.name === selectedValue);
-        optionsHtml += `<option value="${escapeHtml(item.name)}" ${isSel ? 'selected' : ''}>${escapeHtml(item.name)}</option>`;
-    });
-
     const div = document.createElement('div');
     div.className = 'ekstra-row-item card border shadow-xs p-2.5 bg-white rounded-3';
     div.innerHTML = `
         <div class="row g-2 align-items-center">
             <div class="col-md-6 col-12">
-                <label class="form-label small text-secondary fw-semibold mb-1" style="font-size: 0.74rem;">Cabang Ekstrakurikuler</label>
-                <select name="nama_ekstra[]" class="form-select form-select-sm select-cabang-ekstra" onchange="handleEkstraChange(this)" required>
-                    ${optionsHtml}
-                </select>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label small text-secondary fw-semibold mb-0" style="font-size: 0.74rem;">Cabang Ekstrakurikuler</label>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.65rem;">
+                        <i class="bi bi-keyboard me-1"></i>Bisa Diketik
+                    </span>
+                </div>
+                <div class="position-relative combobox-ekstra-container">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0 py-1 px-2" style="font-size: 0.78rem;">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" 
+                               name="nama_ekstra[]" 
+                               class="form-control form-control-sm input-search-ekstra border-start-0 border-end-0" 
+                               style="font-size: 0.8rem; height: 31px;"
+                               placeholder="-- Ketik atau Pilih Cabang --" 
+                               value="${escapeHtml(selectedValue)}"
+                               autocomplete="off" 
+                               list="list_ekstra_options"
+                               required>
+                        <button type="button" 
+                                class="btn btn-outline-secondary btn-clear-ekstra border-start-0 border-end-0 ${selectedValue ? '' : 'd-none'} text-muted py-1 px-2" 
+                                style="font-size: 0.75rem;"
+                                title="Kosongkan pilihan">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                        <button type="button" 
+                                class="btn btn-outline-secondary btn-toggle-ekstra py-1 px-2" 
+                                style="font-size: 0.75rem;"
+                                title="Tampilkan semua cabang">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="dropdown-menu dropdown-ekstra-list shadow-sm w-100 p-0 mt-1" 
+                         style="max-height: 200px; overflow-y: auto; display: none; position: absolute; z-index: 1060;">
+                    </div>
+                </div>
             </div>
             <div class="col-md-5 col-10">
-                <label class="form-label small text-secondary fw-semibold mb-1" style="font-size: 0.74rem;">Guru Pembina</label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label small text-secondary fw-semibold mb-0" style="font-size: 0.74rem;">Guru Pembina</label>
+                </div>
                 <div class="pembina-input-container">
                     ${renderPembinaInputHtml(selectedValue, selectedPembina)}
                 </div>
@@ -945,6 +979,142 @@ function createEkstraRowHtml(type, selectedValue = '', selectedPembina = '') {
     return div;
 }
 
+function wireUpSearchableEkstraRow(rowEl) {
+    const container = rowEl.querySelector('.combobox-ekstra-container');
+    const input = rowEl.querySelector('.input-search-ekstra');
+    const toggleBtn = rowEl.querySelector('.btn-toggle-ekstra');
+    const clearBtn = rowEl.querySelector('.btn-clear-ekstra');
+    const dropdown = rowEl.querySelector('.dropdown-ekstra-list');
+    const pembinaContainer = rowEl.querySelector('.pembina-input-container');
+
+    if (!container || !input || !dropdown) return;
+
+    function renderDropdown(filterText = '') {
+        const q = filterText.trim().toLowerCase();
+        const filtered = ekstraOptionsData.filter(item => {
+            if (!q) return true;
+            return item.name.toLowerCase().includes(q);
+        });
+
+        dropdown.innerHTML = '';
+
+        if (filtered.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'p-2 text-center text-muted small';
+            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada cabang yang cocok';
+            dropdown.appendChild(emptyDiv);
+        } else {
+            filtered.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'dropdown-item py-1.5 px-3 border-bottom text-start w-100 d-flex justify-content-between align-items-center';
+                
+                let pBadge = '';
+                if (item.pembinas && item.pembinas.length > 1) {
+                    pBadge = `<span class="badge bg-primary-subtle text-primary border" style="font-size: 0.65rem;">${item.pembinas.length} Pembina</span>`;
+                } else if (item.pembinas && item.pembinas.length === 1) {
+                    pBadge = `<span class="badge bg-light text-secondary border small text-truncate" style="max-width: 130px; font-size: 0.65rem;">${escapeHtml(item.pembinas[0])}</span>`;
+                }
+
+                btn.innerHTML = `
+                    <span class="fw-semibold text-dark" style="font-size: 0.8rem;">${escapeHtml(item.name)}</span>
+                    ${pBadge}
+                `;
+
+                btn.addEventListener('click', () => {
+                    input.value = item.name;
+                    if (clearBtn) clearBtn.classList.remove('d-none');
+                    closeList();
+                    if (pembinaContainer) {
+                        pembinaContainer.innerHTML = renderPembinaInputHtml(item.name, '');
+                    }
+                });
+                dropdown.appendChild(btn);
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function openList() {
+        renderDropdown(input.value);
+    }
+
+    function closeList() {
+        dropdown.style.display = 'none';
+    }
+
+    input.addEventListener('focus', openList);
+    input.addEventListener('input', function() {
+        renderDropdown(this.value);
+        if (clearBtn) {
+            if (this.value) clearBtn.classList.remove('d-none');
+            else clearBtn.classList.add('d-none');
+        }
+
+        const exactMatch = ekstraOptionsData.find(e => e.name.toLowerCase() === this.value.trim().toLowerCase());
+        if (exactMatch) {
+            if (pembinaContainer) {
+                pembinaContainer.innerHTML = renderPembinaInputHtml(exactMatch.name, '');
+            }
+        } else if (!this.value.trim()) {
+            if (pembinaContainer) {
+                pembinaContainer.innerHTML = renderPembinaInputHtml('', '');
+            }
+        }
+    });
+
+    input.addEventListener('change', function() {
+        const exactMatch = ekstraOptionsData.find(e => e.name.toLowerCase() === this.value.trim().toLowerCase());
+        if (exactMatch) {
+            this.value = exactMatch.name;
+            if (pembinaContainer) {
+                pembinaContainer.innerHTML = renderPembinaInputHtml(exactMatch.name, '');
+            }
+        } else {
+            if (pembinaContainer) {
+                pembinaContainer.innerHTML = renderPembinaInputHtml(this.value.trim(), '');
+            }
+        }
+    });
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.style.display === 'block') {
+                closeList();
+            } else {
+                input.focus();
+                renderDropdown('');
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            input.value = '';
+            clearBtn.classList.add('d-none');
+            if (pembinaContainer) {
+                pembinaContainer.innerHTML = renderPembinaInputHtml('', '');
+            }
+            closeList();
+            input.focus();
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            closeList();
+        }
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeList();
+        }
+    });
+}
+
 function addEkstraRow(type, selectedValue = '', selectedPembina = '') {
     const containerId = type === 'add' ? 'containerEkstraRowsAdd' : 'containerEkstraRowsEdit';
     const container = document.getElementById(containerId);
@@ -952,6 +1122,7 @@ function addEkstraRow(type, selectedValue = '', selectedPembina = '') {
 
     const rowEl = createEkstraRowHtml(type, selectedValue, selectedPembina);
     container.appendChild(rowEl);
+    wireUpSearchableEkstraRow(rowEl);
 }
 
 function removeEkstraRowItem(btn) {
@@ -965,16 +1136,6 @@ function removeEkstraRowItem(btn) {
         const type = container.id === 'containerEkstraRowsAdd' ? 'add' : 'edit';
         addEkstraRow(type, '', '');
     }
-}
-
-function handleEkstraChange(selectEl) {
-    const row = selectEl.closest('.ekstra-row-item');
-    if (!row) return;
-    const container = row.querySelector('.pembina-input-container');
-    if (!container) return;
-
-    const ekstraName = selectEl.value;
-    container.innerHTML = renderPembinaInputHtml(ekstraName, '');
 }
 
 function parsePembinaMapJs(pembinaStr, ekstraArr) {
