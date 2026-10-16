@@ -120,9 +120,12 @@ SIGURU dirancang untuk menggantikan pencatatan administrasi sekolah konvensional
 #### C. Header & Navigasi Admin (`views/header.php` & `views/sidebar.php`)
 
 - **Auto-Hiding Navbar**: Menggunakan event JavaScript `scroll` untuk menyembunyikan navbar saat halaman di-scroll ke bawah dan menampilkannya kembali saat di-scroll ke atas.
-- **Tombol Cepat Refresh**: Muat ulang halaman dan data seketika.
-- **Tombol Hapus Cache**: Membersihkan cache sessionStorage, localStorage, dan reload fresh dari server.
-- **Profil Pengguna**: Menampilkan inisial avatar, nama lengkap, NIP, badge hak akses, dan tautan ke edit profil serta logout.
+- **Tombol Cepat Refresh**: Mengambil ulang data langsung dari server dan merefresh web seketika dengan animasi putar halus (`icon-spin-fast`) dan bypass cache HTTP via `_refreshed`.
+- **Tombol Hapus Cache**: Menghapus seluruh cache yang ada pada browser klien (`sessionStorage`, `localStorage`, `caches` API, Service Worker, IndexedDB), memberikan notifikasi konfirmasi SweetAlert2, dan memuat ulang web dengan data bersih segar via `_nocache`.
+- **Profil Pengguna**: Menampilkan avatar foto/inisial, nama lengkap, NIP, badge hak akses, serta tautan ke edit profil dan logout.
+- **Dashboard Ringkasan & Menu Tombol Inputan Cepat**:
+  - **Super Admin**: Menampilkan seluruh 5 tombol inputan transaksi (*Input Presensi*, *Input Jurnal*, *Input Bimbingan*, *Input Kegiatan Wali*, *Input Ekstrakurikuler*).
+  - **Hak Akses Lainnya**: Menyesuaikan secara otomatis sesuai hak aksesnya (*Guru*: Presensi & Jurnal; *Wali Kelas*: Kegiatan Wali; *Guru Wali*: Bimbingan; *Pembina Ekstra*: Ekstrakurikuler; *Pelihat*: Read-only tanpa tombol form).
 
 #### D. Master Data Terpadu
 

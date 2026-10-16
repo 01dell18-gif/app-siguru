@@ -55,19 +55,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Tombol Refresh Halaman
+    // Bersihkan parameter pembersih cache dari URL history setelah halaman berhasil dimuat
+    if (window.location.search.includes('_refreshed') || window.location.search.includes('_nocache')) {
+        try {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('_refreshed');
+            cleanUrl.searchParams.delete('_nocache');
+            const cleanPath = cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : '') + cleanUrl.hash;
+            window.history.replaceState({}, document.title, cleanPath);
+        } catch (e) {}
+    }
+
+    // 3. Tombol Refresh Halaman (Mengambil data segar & merefresh web)
     const refreshBtn = document.getElementById('btnRefreshApp');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            if (refreshBtn.disabled) return;
+            refreshBtn.disabled = true;
+
             const icon = refreshBtn.querySelector('#iconRefresh') || refreshBtn.querySelector('i');
             if (icon) {
-                icon.style.display = 'inline-block';
-                icon.style.transition = 'transform 0.6s ease';
-                icon.style.transform = 'rotate(360deg)';
+                icon.classList.add('icon-spin-fast');
             }
+
+            // Toast indikator pemuatan data segar
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Memuat Ulang Data...',
+                    text: 'Mengambil data terbaru dari server...',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 800,
+                    timerProgressBar: true
+                });
+            }
+
             setTimeout(() => {
-                window.location.reload();
+                const url = new URL(window.location.href);
+                url.searchParams.set('_refreshed', Date.now());
+                window.location.href = url.toString();
             }, 250);
         });
     }
@@ -75,37 +104,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Tombol Hapus Cache Browser & Memori
     const clearCacheBtn = document.getElementById('btnClearCache');
     if (clearCacheBtn) {
-        clearCacheBtn.addEventListener('click', (e) => {
+        clearCacheBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const icon = clearCacheBtn.querySelector('i');
+            if (clearCacheBtn.disabled) return;
+            clearCacheBtn.disabled = true;
+
+            const icon = clearCacheBtn.querySelector('#iconClearCache') || clearCacheBtn.querySelector('i');
             if (icon) {
-                icon.style.display = 'inline-block';
-                icon.style.transition = 'transform 0.3s ease';
-                icon.style.transform = 'scale(1.25)';
+                icon.classList.add('icon-trash-shake');
             }
 
-            // Bersihkan semua penyimpanan klien (sessionStorage, localStorage, caches API)
+            // Bersihkan semua penyimpanan klien (sessionStorage, localStorage, caches API, serviceWorker, indexedDB)
             try {
                 sessionStorage.clear();
-                localStorage.removeItem('siguru_cache');
-                localStorage.removeItem('siguru_settings_draft');
+                localStorage.clear();
                 if ('caches' in window) {
-                    caches.keys().then((names) => {
-                        names.forEach((name) => caches.delete(name));
-                    });
+                    const names = await caches.keys();
+                    await Promise.all(names.map((name) => caches.delete(name)));
                 }
-            } catch (err) {}
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of registrations) {
+                        await reg.unregister();
+                    }
+                }
+                if ('indexedDB' in window && typeof indexedDB.databases === 'function') {
+                    try {
+                        const dbs = await indexedDB.databases();
+                        dbs.forEach(db => { if (db.name) indexedDB.deleteDatabase(db.name); });
+                    } catch (idbErr) {}
+                }
+            } catch (err) {
+                console.warn('Cache clearing notice:', err);
+            }
 
             // Tampilkan konfirmasi Toast SweetAlert2
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
                     title: 'Cache Berhasil Dibersihkan!',
-                    text: 'Memuat data segar langsung dari database...',
+                    text: 'Semua cache browser telah dihapus. Memuat web...',
                     toast: true,
                     position: 'top-end',
                     showConfirmButton: false,
-                    timer: 1100,
+                    timer: 1000,
                     timerProgressBar: true
                 });
             }
@@ -115,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = new URL(window.location.href);
                 url.searchParams.set('_nocache', Date.now());
                 window.location.href = url.toString();
-            }, 750);
+            }, 600);
         });
     }
 

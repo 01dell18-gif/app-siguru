@@ -881,3 +881,28 @@ a.text-success:hover {
   .content-wrapper { margin-left: 0 !important; padding: 0 !important; }
   .kop-surat { display: block !important; }
 }
+
+/* Animasi Tombol Refresh & Hapus Cache */
+@keyframes iconSpinAnimation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.icon-spin-fast {
+  display: inline-block !important;
+  animation: iconSpinAnimation 0.65s linear infinite !important;
+}
+
+@keyframes trashShakeAnimation {
+  0% { transform: scale(1) rotate(0deg); }
+  20% { transform: scale(1.15) rotate(-12deg); }
+  40% { transform: scale(1.15) rotate(12deg); }
+  60% { transform: scale(1.15) rotate(-12deg); }
+  80% { transform: scale(1.15) rotate(12deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.icon-trash-shake {
+  display: inline-block !important;
+  animation: trashShakeAnimation 0.5s ease-in-out !important;
+}

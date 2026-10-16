@@ -42,15 +42,30 @@ $recentEkstra = $pdo->query("SELECT * FROM hasil_ekstra ORDER BY id DESC LIMIT 5
                 &bull; Tahun Ajaran: <strong><?= htmlspecialchars($settings['tahun_ajaran']) ?></strong> (<?= htmlspecialchars($settings['semester']) ?>)
             </p>
         </div>
-        <div class="d-flex gap-2 mt-3 mt-md-0">
+        <div class="d-flex flex-wrap gap-2 mt-3 mt-lg-0 align-items-center justify-content-start justify-content-lg-end">
             <?php if (hasAccess('form_absen')): ?>
-                <a href="form-absen.php" class="btn btn-primary rounded-pill px-3 btn-sm shadow-sm">
+                <a href="form-absen.php" class="btn btn-primary rounded-pill px-3 btn-sm shadow-sm" title="Form Presensi & Absensi Siswa">
                     <i class="bi bi-check2-circle me-1"></i> Input Presensi
                 </a>
             <?php endif; ?>
             <?php if (hasAccess('form_jurnal')): ?>
-                <a href="form-jurnal.php" class="btn btn-outline-primary rounded-pill px-3 btn-sm">
-                    <i class="bi bi-journal-plus me-1"></i> Input Jurnal
+                <a href="form-jurnal.php" class="btn btn-outline-primary rounded-pill px-3 btn-sm shadow-sm" title="Form Jurnal Mengajar Guru">
+                    <i class="bi bi-journal-bookmark me-1"></i> Input Jurnal
+                </a>
+            <?php endif; ?>
+            <?php if (hasAccess('form_guruwali')): ?>
+                <a href="form-guruwali.php" class="btn btn-outline-danger rounded-pill px-3 btn-sm shadow-sm" title="Form Bimbingan Guru Wali">
+                    <i class="bi bi-chat-heart me-1"></i> Input Bimbingan
+                </a>
+            <?php endif; ?>
+            <?php if (hasAccess('form_wali')): ?>
+                <a href="form-wali.php" class="btn btn-outline-warning text-dark rounded-pill px-3 btn-sm shadow-sm" title="Form Catatan Kegiatan Wali Kelas">
+                    <i class="bi bi-calendar2-week me-1"></i> Input Kegiatan Wali
+                </a>
+            <?php endif; ?>
+            <?php if (hasAccess('form_ekstra')): ?>
+                <a href="form-ekstra.php" class="btn btn-outline-success rounded-pill px-3 btn-sm shadow-sm" title="Form Kegiatan Ekstrakurikuler">
+                    <i class="bi bi-activity me-1"></i> Input Ekstrakurikuler
                 </a>
             <?php endif; ?>
         </div>

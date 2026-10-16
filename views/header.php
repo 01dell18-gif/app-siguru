@@ -4,6 +4,14 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../config/helper.php';
 
+// Pastikan respon server selalu data segar tanpa cache jika diminta
+if (!headers_sent() && (isset($_GET['_nocache']) || isset($_GET['_refreshed']))) {
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Cache-Control: post-check=0, pre-check=0", false);
+    header("Pragma: no-cache");
+    header("Expires: 0");
+}
+
 requireAuth();
 $user = currentUser();
 $settings = getSettings();
@@ -15,6 +23,11 @@ $flash = getFlash();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($pageTitle ?? 'Dashboard') ?> - SIGURU</title>
+    <?php if (isset($_GET['_nocache']) || isset($_GET['_refreshed'])): ?>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <?php endif; ?>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons & FontAwesome -->
