@@ -10,6 +10,9 @@ if (!hasAccess('master_ekstra')) {
 }
 
 $pdo = getDBConnection();
+try {
+    $pdo->exec("ALTER TABLE data_murid_ekstra ADD COLUMN guru_pembina TEXT DEFAULT ''");
+} catch (Exception $e) {}
 $isSuper = isSuperAdmin();
 $ekstraList = getDaftarEkstra();
 $kelasList = getDaftarKelas();
@@ -35,10 +38,10 @@ if ($isTemplate || (isset($_GET['export']) && in_array(strtolower($_GET['export'
     } else {
         foreach ($rows as $r) {
             $items = array_values(array_filter(array_map('trim', explode(',', $r['nama_ekstra'] ?? ''))));
+            $assignedMap = parseMuridEkstraPembinaMap($r['guru_pembina'] ?? '', $items, $ekstraPembinaMap);
             $pembinaParts = [];
             foreach ($items as $it) {
-                $pembinas = $ekstraPembinaMap[$it] ?? [];
-                $pembinaStr = !empty($pembinas) ? implode(', ', $pembinas) : 'Belum Ditentukan';
+                $pembinaStr = $assignedMap[$it] ?? 'Belum Ditentukan';
                 if (count($items) > 1) {
                     $pembinaParts[] = "$it: $pembinaStr";
                 } else {
@@ -92,11 +95,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kelas = trim($_POST['kelas'] ?? '');
         
         $postEkstra = '';
+        $pembinaArr = [];
         if (isset($_POST['nama_ekstra']) && is_array($_POST['nama_ekstra'])) {
-            $postEkstra = implode(', ', array_unique(array_filter(array_map('trim', $_POST['nama_ekstra']))));
+            $submittedEkstras = $_POST['nama_ekstra'];
+            $submittedPembinas = $_POST['guru_pembina'] ?? [];
+            $cleanEkstras = [];
+            foreach ($submittedEkstras as $idx => $ek) {
+                $ek = trim((string)$ek);
+                if ($ek === '' || in_array($ek, $cleanEkstras)) continue;
+                $cleanEkstras[] = $ek;
+                $pem = isset($submittedPembinas[$idx]) ? trim((string)$submittedPembinas[$idx]) : '';
+                if ($pem === '' || $pem === 'Pilih cabang ekstra dulu') {
+                    $avail = $ekstraPembinaMap[$ek] ?? [];
+                    $pem = !empty($avail) ? implode(', ', $avail) : 'Belum Ditentukan';
+                }
+                $pembinaArr[$ek] = $pem;
+            }
+            $postEkstra = implode(', ', $cleanEkstras);
         } else {
             $postEkstra = trim($_POST['nama_ekstra'] ?? '');
+            if (!empty($postEkstra)) {
+                $pembinaArr = parseMuridEkstraPembinaMap($_POST['guru_pembina'] ?? '', [$postEkstra], $ekstraPembinaMap);
+            }
         }
+        $postGuruPembina = serializeMuridEkstraPembinaMap($pembinaArr);
 
         if (!empty($nama) && !empty($postEkstra)) {
             // Validasi duplikasi: Cek apakah nama atau NISN siswa sudah terdaftar dalam data_murid_ekstra
@@ -108,8 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
 
-            $stmt = $pdo->prepare("INSERT INTO data_murid_ekstra (nisn, nama_murid, jenis_kelamin, kelas, nama_ekstra) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$nisn, $nama, $jk, $kelas, $postEkstra]);
+            $stmt = $pdo->prepare("INSERT INTO data_murid_ekstra (nisn, nama_murid, jenis_kelamin, kelas, nama_ekstra, guru_pembina) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$nisn, $nama, $jk, $kelas, $postEkstra, $postGuruPembina]);
             setFlash('success', 'Siswa berhasil didaftarkan ke kegiatan ekstrakurikuler.');
         }
         header("Location: master-ekstra.php");
@@ -124,14 +146,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kelas = trim($_POST['kelas'] ?? '');
         
         $postEkstra = '';
+        $pembinaArr = [];
         if (isset($_POST['nama_ekstra']) && is_array($_POST['nama_ekstra'])) {
-            $postEkstra = implode(', ', array_unique(array_filter(array_map('trim', $_POST['nama_ekstra']))));
+            $submittedEkstras = $_POST['nama_ekstra'];
+            $submittedPembinas = $_POST['guru_pembina'] ?? [];
+            $cleanEkstras = [];
+            foreach ($submittedEkstras as $idx => $ek) {
+                $ek = trim((string)$ek);
+                if ($ek === '' || in_array($ek, $cleanEkstras)) continue;
+                $cleanEkstras[] = $ek;
+                $pem = isset($submittedPembinas[$idx]) ? trim((string)$submittedPembinas[$idx]) : '';
+                if ($pem === '' || $pem === 'Pilih cabang ekstra dulu') {
+                    $avail = $ekstraPembinaMap[$ek] ?? [];
+                    $pem = !empty($avail) ? implode(', ', $avail) : 'Belum Ditentukan';
+                }
+                $pembinaArr[$ek] = $pem;
+            }
+            $postEkstra = implode(', ', $cleanEkstras);
         } else {
             $postEkstra = trim($_POST['nama_ekstra'] ?? '');
+            if (!empty($postEkstra)) {
+                $pembinaArr = parseMuridEkstraPembinaMap($_POST['guru_pembina'] ?? '', [$postEkstra], $ekstraPembinaMap);
+            }
         }
+        $postGuruPembina = serializeMuridEkstraPembinaMap($pembinaArr);
 
-        $stmt = $pdo->prepare("UPDATE data_murid_ekstra SET nisn = ?, nama_murid = ?, jenis_kelamin = ?, kelas = ?, nama_ekstra = ? WHERE id = ?");
-        $stmt->execute([$nisn, $nama, $jk, $kelas, $postEkstra, $id]);
+        $stmt = $pdo->prepare("UPDATE data_murid_ekstra SET nisn = ?, nama_murid = ?, jenis_kelamin = ?, kelas = ?, nama_ekstra = ?, guru_pembina = ? WHERE id = ?");
+        $stmt->execute([$nisn, $nama, $jk, $kelas, $postEkstra, $postGuruPembina, $id]);
         setFlash('success', 'Data siswa ekstrakurikuler diperbarui.');
         header("Location: master-ekstra.php");
         exit;
@@ -152,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rows = parseImportRows($_FILES['file_import']['tmp_name']);
             if (!empty($rows)) {
                 $pdo->exec("DELETE FROM data_murid_ekstra");
-                $stmt = $pdo->prepare("INSERT INTO data_murid_ekstra (nisn, nama_murid, jenis_kelamin, kelas, nama_ekstra) VALUES (?, ?, ?, ?, ?)");
+                $stmt = $pdo->prepare("INSERT INTO data_murid_ekstra (nisn, nama_murid, jenis_kelamin, kelas, nama_ekstra, guru_pembina) VALUES (?, ?, ?, ?, ?, ?)");
                 
                 $firstRow = $rows[0];
                 $colNisn = 1;
@@ -160,6 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $colJk   = 3;
                 $colKls  = 4;
                 $colEks  = 5;
+                $colPem  = null;
 
                 $hasHeader = false;
                 foreach ($firstRow as $idx => $cell) {
@@ -169,6 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     elseif (strpos($cLower, 'kelamin') !== false || $cLower === 'jk' || $cLower === 'l/p') { $colJk = $idx; $hasHeader = true; }
                     elseif (strpos($cLower, 'kelas') !== false || strpos($cLower, 'rombel') !== false) { $colKls = $idx; $hasHeader = true; }
                     elseif (strpos($cLower, 'ekstra') !== false) { $colEks = $idx; $hasHeader = true; }
+                    elseif (strpos($cLower, 'pembina') !== false) { $colPem = $idx; $hasHeader = true; }
                 }
 
                 $inserted = 0;
@@ -194,7 +237,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $eks = trim($data[$colEks] ?? '');
                         if (in_array(strtolower($eks), ['«', '»', '<', '>', '&lt;', '&gt;'])) $eks = '';
 
-                        $stmt->execute([$nisn, $nama, $jk, $kls, $eks]);
+                        $pem = ($colPem !== null && isset($data[$colPem])) ? trim($data[$colPem]) : '';
+                        if (in_array(strtolower($pem), ['«', '»', '<', '>', '&lt;', '&gt;', '-'])) $pem = '';
+
+                        $stmt->execute([$nisn, $nama, $jk, $kls, $eks, $pem]);
                         $inserted++;
                     }
                 }
@@ -346,23 +392,24 @@ $siswaEkstraList = $stmt->fetchAll();
                                 <?php endforeach; ?>
                             </td>
                             <td>
-                                <?php if (empty($items)): ?>
+                                <?php 
+                                $assignedMap = parseMuridEkstraPembinaMap($se['guru_pembina'] ?? '', $items, $ekstraPembinaMap);
+                                if (empty($items)): ?>
                                     <span class="text-muted small fst-italic">-</span>
                                 <?php elseif (count($items) === 1): 
                                     $it = $items[0];
-                                    $pembinas = $ekstraPembinaMap[$it] ?? [];
-                                    $isSet = !empty($pembinas);
+                                    $pembinaName = $assignedMap[$it] ?? 'Belum Ditentukan';
+                                    $isSet = (!empty($pembinaName) && $pembinaName !== 'Belum Ditentukan');
                                 ?>
                                     <div class="<?= $isSet ? 'fw-semibold text-primary' : 'text-muted fst-italic' ?> small">
                                         <i class="bi <?= $isSet ? 'bi-person-badge text-primary' : 'bi-dash-circle text-muted' ?> me-1"></i>
-                                        <?= htmlspecialchars($isSet ? implode(', ', $pembinas) : 'Belum Ditentukan') ?>
+                                        <?= htmlspecialchars($pembinaName) ?>
                                     </div>
                                 <?php else: ?>
                                     <div class="d-flex flex-column gap-1">
                                         <?php foreach ($items as $it): 
-                                            $pembinas = $ekstraPembinaMap[$it] ?? [];
-                                            $isSet = !empty($pembinas);
-                                            $pembinaName = $isSet ? implode(', ', $pembinas) : 'Belum Ditentukan';
+                                            $pembinaName = $assignedMap[$it] ?? 'Belum Ditentukan';
+                                            $isSet = (!empty($pembinaName) && $pembinaName !== 'Belum Ditentukan');
                                         ?>
                                             <div class="small d-flex align-items-center">
                                                 <span class="badge bg-light text-secondary border me-1 fw-semibold" style="font-size: 0.72rem; min-width: 65px;">
@@ -501,7 +548,7 @@ $siswaEkstraList = $stmt->fetchAll();
                             <!-- Baris cabang ekstra dimasukkan secara dinamis via JavaScript -->
                         </div>
                         <div class="form-text small text-muted mt-1">
-                            <i class="bi bi-info-circle me-1"></i> Pilih cabang ekstra, sistem otomatis menampilkan guru pembinanya. Klik "+ Tambah Cabang" jika siswa mengikuti lebih dari 1 kegiatan.
+                            <i class="bi bi-info-circle me-1"></i> Pilih cabang ekstra, sistem otomatis menampilkan guru pembinanya. Jika ada lebih dari 1 guru pembina, pilih salah satu guru pembinanya. Klik "+ Tambah Cabang" jika siswa mengikuti lebih dari 1 kegiatan.
                         </div>
                     </div>
                 </div>
@@ -562,7 +609,7 @@ $siswaEkstraList = $stmt->fetchAll();
                             <!-- Baris cabang ekstra dimasukkan secara dinamis via JavaScript -->
                         </div>
                         <div class="form-text small text-muted mt-1">
-                            <i class="bi bi-info-circle me-1"></i> Pilih cabang ekstra, sistem otomatis menampilkan guru pembinanya. Klik "+ Tambah Cabang" jika siswa mengikuti lebih dari 1 kegiatan.
+                            <i class="bi bi-info-circle me-1"></i> Pilih cabang ekstra, sistem otomatis menampilkan guru pembinanya. Jika ada lebih dari 1 guru pembina, pilih salah satu guru pembinanya. Klik "+ Tambah Cabang" jika siswa mengikuti lebih dari 1 kegiatan.
                         </div>
                     </div>
                 </div>
@@ -802,21 +849,74 @@ function initSearchableStudentPicker(config) {
 const ekstraOptionsData = <?= json_encode(array_map(function($e) use ($ekstraPembinaMap) {
     $pembinas = $ekstraPembinaMap[$e] ?? [];
     $pembinaLbl = !empty($pembinas) ? implode(', ', $pembinas) : 'Belum Ditentukan';
-    return ['name' => $e, 'pembina' => $pembinaLbl];
+    return [
+        'name' => $e, 
+        'pembina' => $pembinaLbl,
+        'pembinas' => array_values($pembinas)
+    ];
 }, $ekstraList), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
-function createEkstraRowHtml(type, selectedValue = '') {
+function getPembinaInfo(ekstraName) {
+    const item = ekstraOptionsData.find(e => e.name === ekstraName);
+    if (!item) return { pembinas: [], pembina: 'Belum Ditentukan' };
+    return item;
+}
+
+function renderPembinaInputHtml(ekstraName, selectedPembina = '') {
+    if (!ekstraName) {
+        return `
+            <div class="pembina-info-box small bg-light border rounded px-2 py-1 text-truncate d-flex align-items-center" style="min-height: 31px;">
+                <i class="bi bi-dash-circle text-muted me-1"></i>
+                <span class="pembina-text text-muted fst-italic" style="font-size: 0.78rem;">Pilih cabang ekstra dulu</span>
+                <input type="hidden" name="guru_pembina[]" value="">
+            </div>
+        `;
+    }
+
+    const info = getPembinaInfo(ekstraName);
+    const pembinas = info.pembinas || [];
+
+    if (pembinas.length === 0) {
+        return `
+            <div class="pembina-info-box small bg-light border rounded px-2 py-1 text-truncate d-flex align-items-center" style="min-height: 31px;">
+                <i class="bi bi-dash-circle text-muted me-1"></i>
+                <span class="pembina-text text-muted fst-italic" style="font-size: 0.78rem;">Belum Ditentukan</span>
+                <input type="hidden" name="guru_pembina[]" value="Belum Ditentukan">
+            </div>
+        `;
+    } else if (pembinas.length === 1) {
+        const pName = pembinas[0];
+        return `
+            <div class="pembina-info-box small bg-light border rounded px-2 py-1 text-truncate d-flex align-items-center" style="min-height: 31px;">
+                <i class="bi bi-person-badge text-primary me-1"></i>
+                <span class="pembina-text fw-bold text-primary text-truncate" style="font-size: 0.78rem;">${escapeHtml(pName)}</span>
+                <input type="hidden" name="guru_pembina[]" value="${escapeHtml(pName)}">
+            </div>
+        `;
+    } else {
+        // Lebih dari 1 Guru Pembina: buat select dropdown agar bisa dipilih salah satu!
+        let opts = `<option value="">-- Pilih Salah Satu Guru Pembina --</option>`;
+        pembinas.forEach(p => {
+            const isSel = (selectedPembina && p.trim() === selectedPembina.trim());
+            opts += `<option value="${escapeHtml(p)}" ${isSel ? 'selected' : ''}>${escapeHtml(p)}</option>`;
+        });
+
+        return `
+            <div class="position-relative">
+                <select name="guru_pembina[]" class="form-select form-select-sm select-guru-pembina border-primary" style="min-height: 31px; font-size: 0.78rem;" required>
+                    ${opts}
+                </select>
+            </div>
+        `;
+    }
+}
+
+function createEkstraRowHtml(type, selectedValue = '', selectedPembina = '') {
     let optionsHtml = '<option value="">-- Pilih Cabang Ekstrakurikuler --</option>';
-    let selectedPembina = 'Pilih cabang ekstra dulu';
-    let isSet = false;
 
     ekstraOptionsData.forEach(item => {
         const isSel = (item.name === selectedValue);
-        if (isSel) {
-            selectedPembina = item.pembina;
-            isSet = (item.pembina !== 'Belum Ditentukan');
-        }
-        optionsHtml += `<option value="${escapeHtml(item.name)}" data-pembina="${escapeHtml(item.pembina)}" ${isSel ? 'selected' : ''}>${escapeHtml(item.name)}</option>`;
+        optionsHtml += `<option value="${escapeHtml(item.name)}" ${isSel ? 'selected' : ''}>${escapeHtml(item.name)}</option>`;
     });
 
     const div = document.createElement('div');
@@ -825,15 +925,14 @@ function createEkstraRowHtml(type, selectedValue = '') {
         <div class="row g-2 align-items-center">
             <div class="col-md-6 col-12">
                 <label class="form-label small text-secondary fw-semibold mb-1" style="font-size: 0.74rem;">Cabang Ekstrakurikuler</label>
-                <select name="nama_ekstra[]" class="form-select form-select-sm select-cabang-ekstra" onchange="handleEkstraChange(this)">
+                <select name="nama_ekstra[]" class="form-select form-select-sm select-cabang-ekstra" onchange="handleEkstraChange(this)" required>
                     ${optionsHtml}
                 </select>
             </div>
             <div class="col-md-5 col-10">
                 <label class="form-label small text-secondary fw-semibold mb-1" style="font-size: 0.74rem;">Guru Pembina</label>
-                <div class="pembina-info-box small bg-light border rounded px-2 py-1 text-truncate" style="min-height: 31px; display: flex; align-items: center;">
-                    <i class="bi bi-person-badge text-primary me-1"></i>
-                    <span class="pembina-text ${isSet ? 'fw-bold text-primary' : 'text-muted fst-italic'}" style="font-size: 0.78rem;">${escapeHtml(selectedPembina)}</span>
+                <div class="pembina-input-container">
+                    ${renderPembinaInputHtml(selectedValue, selectedPembina)}
                 </div>
             </div>
             <div class="col-md-1 col-2 text-end pt-md-3">
@@ -846,12 +945,12 @@ function createEkstraRowHtml(type, selectedValue = '') {
     return div;
 }
 
-function addEkstraRow(type, selectedValue = '') {
+function addEkstraRow(type, selectedValue = '', selectedPembina = '') {
     const containerId = type === 'add' ? 'containerEkstraRowsAdd' : 'containerEkstraRowsEdit';
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const rowEl = createEkstraRowHtml(type, selectedValue);
+    const rowEl = createEkstraRowHtml(type, selectedValue, selectedPembina);
     container.appendChild(rowEl);
 }
 
@@ -864,29 +963,50 @@ function removeEkstraRowItem(btn) {
     // Pastikan minimal ada 1 baris
     if (container && container.children.length === 0) {
         const type = container.id === 'containerEkstraRowsAdd' ? 'add' : 'edit';
-        addEkstraRow(type, '');
+        addEkstraRow(type, '', '');
     }
 }
 
 function handleEkstraChange(selectEl) {
-    const selectedOpt = selectEl.options[selectEl.selectedIndex];
     const row = selectEl.closest('.ekstra-row-item');
     if (!row) return;
-    const pembinaSpan = row.querySelector('.pembina-text');
-    if (!pembinaSpan) return;
+    const container = row.querySelector('.pembina-input-container');
+    if (!container) return;
 
-    if (!selectEl.value) {
-        pembinaSpan.textContent = 'Pilih cabang ekstra dulu';
-        pembinaSpan.className = 'pembina-text text-muted fst-italic';
-    } else {
-        const pembina = selectedOpt.getAttribute('data-pembina') || 'Belum Ditentukan';
-        pembinaSpan.textContent = pembina;
-        if (pembina !== 'Belum Ditentukan') {
-            pembinaSpan.className = 'pembina-text fw-bold text-primary';
-        } else {
-            pembinaSpan.className = 'pembina-text text-muted fst-italic';
-        }
+    const ekstraName = selectEl.value;
+    container.innerHTML = renderPembinaInputHtml(ekstraName, '');
+}
+
+function parsePembinaMapJs(pembinaStr, ekstraArr) {
+    const map = {};
+    if (!pembinaStr) return map;
+    pembinaStr = String(pembinaStr).trim();
+
+    if (pembinaStr.startsWith('{')) {
+        try {
+            return JSON.parse(pembinaStr);
+        } catch (e) {}
     }
+
+    if (pembinaStr.includes(':')) {
+        const parts = pembinaStr.split(';');
+        parts.forEach(part => {
+            const sub = part.split(':');
+            if (sub.length >= 2) {
+                const k = sub[0].trim();
+                const v = sub.slice(1).join(':').trim();
+                if (k) map[k] = v;
+            }
+        });
+        return map;
+    }
+
+    if (ekstraArr && ekstraArr.length === 1) {
+        map[ekstraArr[0]] = pembinaStr;
+        return map;
+    }
+
+    return map;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -903,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inisialisasi minimal 1 baris di modal Tambah
     const containerAdd = document.getElementById('containerEkstraRowsAdd');
     if (containerAdd && containerAdd.children.length === 0) {
-        addEkstraRow('add', '');
+        addEkstraRow('add', '', '');
     }
 });
 
@@ -914,16 +1034,19 @@ function editEkstra(se) {
     document.getElementById('edit_e_jk').value = se.jenis_kelamin;
     document.getElementById('edit_e_kelas').value = se.kelas;
 
-    // Bersihkan dan masukkan baris ekstra yang dipilih
+    // Bersihkan dan masukkan baris ekstra yang dipilih beserta pembina terpilih
     const container = document.getElementById('containerEkstraRowsEdit');
     if (container) {
         container.innerHTML = '';
         const currentEkstras = (se.nama_ekstra || '').split(',').map(s => s.trim()).filter(Boolean);
+        const pembinaMap = parsePembinaMapJs(se.guru_pembina || '', currentEkstras);
+
         if (currentEkstras.length === 0) {
-            addEkstraRow('edit', '');
+            addEkstraRow('edit', '', '');
         } else {
             currentEkstras.forEach(ekstraName => {
-                addEkstraRow('edit', ekstraName);
+                const savedCoach = pembinaMap[ekstraName] || '';
+                addEkstraRow('edit', ekstraName, savedCoach);
             });
         }
     }

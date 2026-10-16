@@ -313,8 +313,8 @@ Ketika Anda berpindah ke komputer atau laptop lain:
 23. **Data Guru Pembina Sesuai Cabang Ekstrakurikuler & Dynamic Repeater (`master-ekstra.php`)**:
     - Tabel Data Siswa Ekstrakurikuler menyajikan kolom data **Guru Pembina** sesuai cabang ekstra yang diikuti siswa (diambil dari `data_guru.pembina_ekstra`).
     - Jika siswa memilih lebih dari 1 Cabang Ekstrakurikuler, setiap cabang menampilkan guru pembinanya masing-masing secara terstruktur.
-    - Pada modal Tambah dan Edit, pemilihan cabang disajikan dengan komponen dynamic repeater (+ Tambah Cabang) yang menyajikan dropdown cabang ekstra sekaligus menampilkan guru pembinanya secara otomatis dan interaktif.
-    - Ekspor data ke Excel & CSV menyertakan kolom data Guru Pembina secara lengkap.
+    - Pada modal Tambah dan Edit, pemilihan cabang disajikan dengan komponen dynamic repeater (+ Tambah Cabang) yang menyajikan dropdown cabang ekstra sekaligus menampilkan guru pembinanya secara otomatis dan interaktif. Jika cabang tersebut memiliki **lebih dari 1 Guru Pembina**, sistem secara dinamis menyajikan dropdown pilihan Guru Pembina sehingga pengguna dapat memilih salah satu pembina yang melatih siswa tersebut.
+    - Ekspor data ke Excel & CSV menyertakan kolom data Guru Pembina secara lengkap sesuai pembina yang dipilih.
 
 24. **Mode Switch Foto Profil Pengguna & Keselarasan Desain Formulir (`profil.php`)**:
     - Pengelolaan foto profil pengguna mendukung dua metode penyimpanan yang dapat dipilih salah satu (mode switch) antara **Upload Berkas** dan **Tautan URL Foto**, serta opsi **Tetap (Gunakan Saat Ini)**.

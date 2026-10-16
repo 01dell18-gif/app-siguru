@@ -88,7 +88,8 @@ CREATE TABLE IF NOT EXISTS `data_murid_ekstra` (
     `nama_murid` VARCHAR(255) NOT NULL,
     `jenis_kelamin` VARCHAR(20) NOT NULL,
     `kelas` VARCHAR(100) NOT NULL,
-    `nama_ekstra` VARCHAR(255) NOT NULL
+    `nama_ekstra` VARCHAR(255) NOT NULL,
+    `guru_pembina` TEXT DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 7. Tabel Hasil Absen (Presensi)

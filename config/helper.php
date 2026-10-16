@@ -175,6 +175,89 @@ function getEkstraPembinaMap() {
     return $map;
 }
 
+/**
+ * Mem-parsing string guru_pembina untuk masing-masing cabang ekstrakurikuler siswa.
+ * Format tersimpan bisa berupa:
+ * 1. String nama guru tunggal (misal: "FYJ Channel")
+ * 2. Format terstruktur per cabang (misal: "Drumband: FYJ Channel; Futsal: Susanto")
+ * 3. JSON format {"Drumband":"FYJ Channel"}
+ * Jika belum ada atau kosong, otomatis fallback ke pemetaan guru pembina di master data_guru ($ekstraPembinaMap).
+ *
+ * @param string $pembinaString
+ * @param array $ekstraNames
+ * @param array $ekstraPembinaMap
+ * @return array Asosiatif [nama_ekstra => nama_pembina]
+ */
+function parseMuridEkstraPembinaMap($pembinaString, $ekstraNames = [], $ekstraPembinaMap = []) {
+    $res = [];
+    $pembinaString = trim((string)$pembinaString);
+
+    if (empty($ekstraPembinaMap)) {
+        $ekstraPembinaMap = getEkstraPembinaMap();
+    }
+
+    // 1. JSON parse jika format JSON
+    if (!empty($pembinaString) && ($pembinaString[0] === '{' || $pembinaString[0] === '[')) {
+        $json = json_decode($pembinaString, true);
+        if (is_array($json)) {
+            $res = $json;
+        }
+    }
+
+    // 2. Format per cabang: "Ekstra: Pembina; Ekstra2: Pembina2"
+    if (empty($res) && strpos($pembinaString, ':') !== false) {
+        $parts = explode(';', $pembinaString);
+        foreach ($parts as $part) {
+            $sub = explode(':', trim($part), 2);
+            if (count($sub) === 2) {
+                $ek = trim($sub[0]);
+                $pem = trim($sub[1]);
+                if ($ek !== '') {
+                    $res[$ek] = $pem;
+                }
+            }
+        }
+    }
+
+    // 3. String biasa tanpa separator ':' jika hanya ada 1 cabang ekstra
+    if (empty($res) && !empty($pembinaString) && count($ekstraNames) === 1) {
+        $res[$ekstraNames[0]] = $pembinaString;
+    }
+
+    // 4. Fallback ke master data_guru jika belum ditentukan atau belum tersimpan
+    foreach ($ekstraNames as $ek) {
+        if (!isset($res[$ek]) || $res[$ek] === '' || $res[$ek] === 'Belum Ditentukan') {
+            $avail = $ekstraPembinaMap[$ek] ?? [];
+            if (!empty($avail)) {
+                $res[$ek] = implode(', ', $avail);
+            } else {
+                $res[$ek] = 'Belum Ditentukan';
+            }
+        }
+    }
+
+    return $res;
+}
+
+/**
+ * Menyusun string guru_pembina untuk disimpan ke database
+ * Jika hanya ada 1 cabang: return nama pembina
+ * Jika > 1 cabang: return "Cabang1: Pembina1; Cabang2: Pembina2"
+ */
+function serializeMuridEkstraPembinaMap($pembinaMap) {
+    if (empty($pembinaMap) || !is_array($pembinaMap)) {
+        return '';
+    }
+    if (count($pembinaMap) === 1) {
+        return reset($pembinaMap);
+    }
+    $parts = [];
+    foreach ($pembinaMap as $ek => $pem) {
+        $parts[] = "$ek: $pem";
+    }
+    return implode('; ', $parts);
+}
+
 function getDaftarMapel() {
     global $settings;
     if (empty($settings)) {

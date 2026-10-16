@@ -86,7 +86,8 @@ CREATE TABLE IF NOT EXISTS data_murid_ekstra (
     nama_murid TEXT NOT NULL,
     jenis_kelamin TEXT NOT NULL,
     kelas TEXT NOT NULL,
-    nama_ekstra TEXT NOT NULL
+    nama_ekstra TEXT NOT NULL,
+    guru_pembina TEXT DEFAULT ''
 );
 
 -- 7. Tabel Hasil Absen (Presensi)
