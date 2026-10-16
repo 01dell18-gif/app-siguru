@@ -149,6 +149,32 @@ function getDaftarEkstra() {
     return array_values(array_filter($list));
 }
 
+/**
+ * Mendapatkan mapping Cabang Ekstrakurikuler => Daftar Guru Pembina dari tabel data_guru
+ * @return array Asosiatif [nama_ekstra => [guru1, guru2, ...]]
+ */
+function getEkstraPembinaMap() {
+    $pdo = getDBConnection();
+    $map = [];
+    try {
+        $stmt = $pdo->query("SELECT nama_guru, pembina_ekstra FROM data_guru WHERE pembina_ekstra IS NOT NULL AND pembina_ekstra != '' AND pembina_ekstra != '-'");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $gNama = trim($row['nama_guru']);
+            $branches = array_map('trim', explode(',', $row['pembina_ekstra']));
+            foreach ($branches as $br) {
+                if ($br === '' || $br === '-') continue;
+                if (!isset($map[$br])) {
+                    $map[$br] = [];
+                }
+                if (!in_array($gNama, $map[$br])) {
+                    $map[$br][] = $gNama;
+                }
+            }
+        }
+    } catch (Exception $e) {}
+    return $map;
+}
+
 function getDaftarMapel() {
     global $settings;
     if (empty($settings)) {

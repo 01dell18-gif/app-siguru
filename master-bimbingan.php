@@ -464,17 +464,32 @@ $bimbinganList = $stmt->fetchAll();
             <form method="POST" action="master-bimbingan.php" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-body p-4">
-                    <!-- Dropdown Cari Berdasarkan Status Murid dari DataMurid Sesuai PRD -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-primary">Pilih Siswa dari DataMurid (Status: Guru Wali)</label>
-                        <select class="form-select" id="selectMuridGW" onchange="autoFillStudentData(this)">
-                            <option value="">-- Pilih Siswa atau Isi Manual di Bawah --</option>
-                            <?php foreach ($eligibleStudents as $es): ?>
-                                <option value="<?= htmlspecialchars(json_encode($es)) ?>">
-                                    <?= htmlspecialchars($es['nama_murid']) ?> (NISN: <?= htmlspecialchars($es['nisn']) ?> - <?= htmlspecialchars($es['kelas']) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <!-- Dropdown Cari Berdasarkan Status Murid dari DataMurid (Dapat Diketik Sesuai Permintaan) -->
+                    <div class="mb-3 position-relative" id="comboboxMuridGW">
+                        <label class="form-label fw-semibold small text-primary d-flex justify-content-between align-items-center mb-1">
+                            <span><i class="bi bi-person-lines-fill me-1"></i> Pilih Siswa dari DataMurid (Status: Guru Wali)</span>
+                            <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="searchMuridGWInput" 
+                                   placeholder="-- Ketik Nama Siswa, NISN, atau Kelas --" 
+                                   autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" id="btnToggleMuridGW" title="Tampilkan semua siswa">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <button class="btn btn-outline-danger d-none" type="button" id="btnClearMuridGW" title="Reset pencarian">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div id="dropdownMuridGWList" class="dropdown-menu w-100 shadow-lg border mt-1 p-0 overflow-auto" style="max-height: 250px; z-index: 1060; display: none;">
+                            <!-- Opsi siswa diisi dinamis oleh JS -->
+                        </div>
+                        <div class="form-text small text-muted">
+                            <i class="bi bi-info-circle me-1"></i> Ketik nama atau NISN untuk mencari cepat. Klik pilihan untuk mengisi otomatis data siswa di bawah.
+                        </div>
                     </div>
 
                     <div class="row g-3">
@@ -768,14 +783,198 @@ $bimbinganList = $stmt->fetchAll();
 </form>
 
 <script>
-function autoFillStudentData(selectEl) {
-    if (!selectEl.value) return;
-    const data = JSON.parse(selectEl.value);
+const eligibleStudentsGW = <?= json_encode($eligibleStudents, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+}
+
+function autoFillStudentData(data) {
+    if (!data) return;
+    if (data.value !== undefined) {
+        if (!data.value) return;
+        data = JSON.parse(data.value);
+    }
     document.getElementById('add_b_nisn').value = data.nisn || '';
     document.getElementById('add_b_nama').value = data.nama_murid || '';
     document.getElementById('add_b_kelas').value = data.kelas || '';
     document.getElementById('add_b_jk').value = data.jenis_kelamin || 'L';
 }
+
+function initSearchableStudentPicker(config) {
+    const input = document.getElementById(config.inputId);
+    const toggleBtn = document.getElementById(config.toggleBtnId);
+    const clearBtn = document.getElementById(config.clearBtnId);
+    const dropdown = document.getElementById(config.dropdownId);
+    const container = document.getElementById(config.containerId);
+    const students = config.students || [];
+    let activeIndex = -1;
+    let currentList = [];
+
+    if (!input || !dropdown || !container) return;
+
+    function renderDropdown(filterText = '') {
+        const q = filterText.trim().toLowerCase();
+        currentList = students.filter(s => {
+            if (!q) return true;
+            const nm = (s.nama_murid || '').toLowerCase();
+            const nsn = (s.nisn || '').toLowerCase();
+            const kls = (s.kelas || '').toLowerCase();
+            return nm.includes(q) || nsn.includes(q) || kls.includes(q);
+        });
+
+        dropdown.innerHTML = '';
+        activeIndex = -1;
+
+        // Opsi Manual di paling atas
+        const manualBtn = document.createElement('button');
+        manualBtn.type = 'button';
+        manualBtn.className = 'dropdown-item py-2 px-3 border-bottom text-muted fst-italic bg-light text-start w-100';
+        manualBtn.innerHTML = '<i class="bi bi-pencil-square me-2 text-primary"></i>-- Isi Manual di Bawah (Kosongkan Pilihan) --';
+        manualBtn.addEventListener('click', () => {
+            input.value = '';
+            if (clearBtn) clearBtn.classList.add('d-none');
+            if (toggleBtn) toggleBtn.classList.remove('d-none');
+            closeList();
+        });
+        dropdown.appendChild(manualBtn);
+
+        if (currentList.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'p-3 text-center text-muted small';
+            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada siswa yang cocok dengan "<b>' + escapeHtml(filterText) + '</b>"';
+            dropdown.appendChild(emptyDiv);
+        } else {
+            currentList.forEach((st) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'dropdown-item py-2 px-3 border-bottom text-wrap text-start w-100';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="fw-bold text-dark"><i class="bi bi-person-fill text-primary me-1"></i>${escapeHtml(st.nama_murid)}</div>
+                        <span class="badge bg-light text-primary border">${escapeHtml(st.kelas)}</span>
+                    </div>
+                    <div class="small text-muted mt-1">
+                        <span class="font-monospace">NISN: ${escapeHtml(st.nisn)}</span> • JK: <span class="badge ${st.jenis_kelamin === 'P' ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary'} px-1">${escapeHtml(st.jenis_kelamin || 'L')}</span>
+                    </div>
+                `;
+                item.addEventListener('click', () => {
+                    input.value = `${st.nama_murid} (NISN: ${st.nisn} - ${st.kelas})`;
+                    if (clearBtn) clearBtn.classList.remove('d-none');
+                    if (toggleBtn) toggleBtn.classList.add('d-none');
+                    closeList();
+                    if (typeof config.onSelect === 'function') {
+                        config.onSelect(st);
+                    }
+                });
+                dropdown.appendChild(item);
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function openList() {
+        const val = input.value;
+        const query = val.includes('(NISN:') ? '' : val;
+        renderDropdown(query);
+    }
+
+    function closeList() {
+        dropdown.style.display = 'none';
+        activeIndex = -1;
+    }
+
+    input.addEventListener('focus', openList);
+    input.addEventListener('input', function() {
+        if (clearBtn) clearBtn.classList.toggle('d-none', !this.value);
+        if (toggleBtn) toggleBtn.classList.toggle('d-none', !!this.value);
+        renderDropdown(this.value);
+    });
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.style.display === 'block') {
+                closeList();
+            } else {
+                input.focus();
+                openList();
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            input.value = '';
+            clearBtn.classList.add('d-none');
+            if (toggleBtn) toggleBtn.classList.remove('d-none');
+            input.focus();
+            openList();
+        });
+    }
+
+    input.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.dropdown-item');
+        if (dropdown.style.display !== 'block') {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                openList();
+                e.preventDefault();
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            updateActive(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            updateActive(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeIndex >= 0 && items[activeIndex]) {
+                items[activeIndex].click();
+            }
+        } else if (e.key === 'Escape') {
+            closeList();
+        }
+    });
+
+    function updateActive(items) {
+        items.forEach((it, i) => {
+            if (i === activeIndex) {
+                it.classList.add('active');
+                it.scrollIntoView({ block: 'nearest' });
+            } else {
+                it.classList.remove('active');
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            closeList();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initSearchableStudentPicker({
+        containerId: 'comboboxMuridGW',
+        inputId: 'searchMuridGWInput',
+        toggleBtnId: 'btnToggleMuridGW',
+        clearBtnId: 'btnClearMuridGW',
+        dropdownId: 'dropdownMuridGWList',
+        students: eligibleStudentsGW,
+        onSelect: autoFillStudentData
+    });
+});
+
 
 // Handler Switch Metode Foto - Modal Tambah
 function switchFotoMethodAdd(method) {

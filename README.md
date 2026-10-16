@@ -288,6 +288,25 @@ Ketika Anda berpindah ke komputer atau laptop lain:
     - Jika membina 1 cabang: otomatis terisi dan terkunci.
     - Jika membina lebih dari 1 cabang: disajikan dalam bentuk dropdown pilihan cabang binaan guru tersebut.
 
+21. **Pencarian Cepat Siswa Dapat Diketik (Searchable Combobox) pada Master Bimbingan & Master Ekstra**:
+    - Input pemilihan siswa dari DataMurid pada modal Tambah Siswa Bimbingan (`master-bimbingan.php`) dan Tambah Anggota Ekstra (`master-ekstra.php`) dapat diketik langsung untuk memfilter nama siswa, NISN, atau rombel kelas secara cepat.
+    - Dilengkapi navigasi keyboard (panah atas/bawah, enter, escape), tombol clear instan, opsi manual, dan pengisian otomatis ke semua kolom formulir.
+
+22. **Proteksi & Kunci Menu Data Siswa Ekstrakurikuler (`master-ekstra.php`)**:
+    - Untuk pengguna non-Super Admin, tombol **Tambah Anggota Ekstra** dan **Import Excel** disembunyikan.
+    - Kolom aksi (Edit & Hapus) terkunci dengan badge `🔒 Terkunci`.
+    - Di sisi backend controller, seluruh request POST (`create`, `update`, `delete`, `import`) diverifikasi secara ketat melalui fungsi `isSuperAdmin()`.
+
+23. **Data Guru Pembina Sesuai Cabang Ekstrakurikuler & Dynamic Repeater (`master-ekstra.php`)**:
+    - Tabel Data Siswa Ekstrakurikuler menyajikan kolom data **Guru Pembina** sesuai cabang ekstra yang diikuti siswa (diambil dari `data_guru.pembina_ekstra`).
+    - Jika siswa memilih lebih dari 1 Cabang Ekstrakurikuler, setiap cabang menampilkan guru pembinanya masing-masing secara terstruktur.
+    - Pada modal Tambah dan Edit, pemilihan cabang disajikan dengan komponen dynamic repeater (+ Tambah Cabang) yang menyajikan dropdown cabang ekstra sekaligus menampilkan guru pembinanya secara otomatis dan interaktif.
+    - Ekspor data ke Excel & CSV menyertakan kolom data Guru Pembina secara lengkap.
+
+24. **Mode Switch Foto Profil Pengguna (Upload Berkas vs Tautan URL) (`profil.php`)**:
+    - Pengelolaan foto profil pengguna mendukung dua metode penyimpanan yang dapat dipilih salah satu (mode switch) antara **Upload Berkas** dan **Tautan URL Foto**.
+    - Berfungsi penuh baik pada modal upload cepat maupun formulir identitas diri, dengan live preview instan dan konversi otomatis tautan Google Drive ke format thumbnail yang siap tampil.
+
 ---
 
 ## 📁 Struktur Direktori Proyek

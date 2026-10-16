@@ -92,15 +92,33 @@ function handleSaveUserProfilePhoto($fileInputName, $currentPhoto, $pdo, $userId
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = trim($_POST['action'] ?? '');
 
-    // 1. Upload Foto Profil Cepat (via Modal atau Tombol Kamera)
+    // 1. Upload Foto Profil Cepat (via Modal atau Tombol Kamera - Mode Switch: Upload / URL)
     if ($action === 'upload_foto') {
-        $res = handleSaveUserProfilePhoto('foto_avatar', $userProfile['foto'] ?? '', $pdo, $userId);
-        if ($res === null) {
-            setFlash('danger', 'Silakan pilih berkas foto terlebih dahulu sebelum menyimpan.');
-        } elseif (!$res['success']) {
-            setFlash('danger', $res['message']);
+        $photoMethod = $_POST['photo_method'] ?? 'upload';
+
+        if ($photoMethod === 'url') {
+            $photoUrl = trim($_POST['foto_url'] ?? '');
+            if (empty($photoUrl) || !filter_var($photoUrl, FILTER_VALIDATE_URL)) {
+                setFlash('danger', 'Harap masukkan tautan URL foto yang valid (contoh: https://...).');
+            } else {
+                $currPhoto = $userProfile['foto'] ?? '';
+                if (!empty($currPhoto) && strpos($currPhoto, 'uploads/photos/') === 0 && file_exists(__DIR__ . '/' . $currPhoto)) {
+                    @unlink(__DIR__ . '/' . $currPhoto);
+                }
+                $stmtUp = $pdo->prepare("UPDATE data_user SET foto = ? WHERE id = ?");
+                $stmtUp->execute([$photoUrl, $userId]);
+                $_SESSION['foto'] = $photoUrl;
+                setFlash('success', 'Foto profil berhasil diperbarui dari tautan URL!');
+            }
         } else {
-            setFlash('success', 'Foto profil berhasil diperbarui!');
+            $res = handleSaveUserProfilePhoto('foto_avatar', $userProfile['foto'] ?? '', $pdo, $userId);
+            if ($res === null) {
+                setFlash('danger', 'Silakan pilih berkas foto terlebih dahulu sebelum menyimpan.');
+            } elseif (!$res['success']) {
+                setFlash('danger', $res['message']);
+            } else {
+                setFlash('success', 'Foto profil berhasil diperbarui!');
+            }
         }
         header("Location: profil.php");
         exit;
@@ -170,8 +188,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $stmtGuru->execute([$nama, $nip, $oldNama]);
         }
 
-        // Cek jika pengguna juga memilih foto baru pada form identitas diri
-        if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] !== UPLOAD_ERR_NO_FILE) {
+        // Cek jika pengguna juga memilih foto baru pada form identitas diri (Mode Switch: Keep / Upload / URL)
+        $formPhotoMethod = $_POST['form_photo_method'] ?? 'keep';
+        if ($formPhotoMethod === 'url') {
+            $formPhotoUrl = trim($_POST['form_foto_url'] ?? '');
+            if (!empty($formPhotoUrl) && filter_var($formPhotoUrl, FILTER_VALIDATE_URL)) {
+                $currPhoto = $userProfile['foto'] ?? '';
+                if (!empty($currPhoto) && strpos($currPhoto, 'uploads/photos/') === 0 && file_exists(__DIR__ . '/' . $currPhoto)) {
+                    @unlink(__DIR__ . '/' . $currPhoto);
+                }
+                $stmtUpFoto = $pdo->prepare("UPDATE data_user SET foto = ? WHERE id = ?");
+                $stmtUpFoto->execute([$formPhotoUrl, $userId]);
+                $_SESSION['foto'] = $formPhotoUrl;
+            }
+        } elseif ($formPhotoMethod === 'upload' && isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] !== UPLOAD_ERR_NO_FILE) {
             $res = handleSaveUserProfilePhoto('foto_profil', $userProfile['foto'] ?? '', $pdo, $userId);
             if ($res && !$res['success']) {
                 setFlash('warning', 'Identitas diri tersimpan, namun foto profil gagal diunggah: ' . $res['message']);
@@ -489,7 +519,7 @@ $hasCustomPhoto = !empty($userProfile['foto']);
                             <small class="text-muted" style="font-size: 0.75rem;">Nama ini otomatis tercantum pada tanda tangan laporan dan identitas akun.</small>
                         </div>
 
-                        <!-- Menu Upload Foto Profil di Form Identitas Diri -->
+                        <!-- Menu Foto Profil di Form Identitas Diri (Mode Switch: Upload / URL) -->
                         <div class="col-12">
                             <label class="form-label small fw-semibold text-secondary d-flex align-items-center justify-content-between mb-1">
                                 <span><i class="bi bi-image me-1.5 text-primary"></i>Foto Profil Pengguna</span>
@@ -501,21 +531,58 @@ $hasCustomPhoto = !empty($userProfile['foto']);
                                     <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.72rem;">Inisial Nama</span>
                                 <?php endif; ?>
                             </label>
-                            <div class="p-3 bg-light rounded border d-flex flex-wrap align-items-center gap-3">
-                                <div class="rounded-circle overflow-hidden shadow-xs border bg-white d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; flex-shrink: 0;">
-                                    <?php if ($hasCustomPhoto): ?>
-                                        <img id="formFotoPreview" src="<?= htmlspecialchars(formatPhotoUrl($userProfile['foto'])) ?>" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
-                                    <?php else: ?>
-                                        <div id="formFotoInitial" class="fw-bold text-primary" style="font-size: 1.3rem;">
-                                            <?= strtoupper(substr($userProfile['nama'] ?: 'U', 0, 1)) ?>
-                                        </div>
-                                        <img id="formFotoPreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                                    <?php endif; ?>
+                            
+                            <div class="p-3 bg-light rounded-3 border">
+                                <!-- Mode Switch Buttons -->
+                                <div class="mb-3">
+                                    <div class="btn-group w-100 p-1 bg-white rounded-pill border shadow-xs" role="group">
+                                        <input type="radio" class="btn-check" name="form_photo_method" id="fpm_keep" value="keep" checked onchange="switchFormPhotoMethod('keep')">
+                                        <label class="btn btn-sm rounded-pill fw-semibold" for="fpm_keep">Tetap (Gunakan Saat Ini)</label>
+
+                                        <input type="radio" class="btn-check" name="form_photo_method" id="fpm_upload" value="upload" onchange="switchFormPhotoMethod('upload')">
+                                        <label class="btn btn-sm rounded-pill fw-semibold" for="fpm_upload"><i class="bi bi-upload me-1"></i> Upload Berkas</label>
+
+                                        <input type="radio" class="btn-check" name="form_photo_method" id="fpm_url" value="url" onchange="switchFormPhotoMethod('url')">
+                                        <label class="btn btn-sm rounded-pill fw-semibold" for="fpm_url"><i class="bi bi-link-45deg me-1"></i> Tautan URL</label>
+                                    </div>
                                 </div>
-                                <div class="flex-grow-1" style="min-width: 220px;">
-                                    <input type="file" name="foto_profil" id="inputFotoProfilForm" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImageFile(this, 'formFotoPreview', 'formFotoInitial')">
-                                    <div class="form-text small text-muted mb-0" style="font-size: 0.74rem;">
-                                        Pilih foto (JPG, PNG, WEBP, GIF, maks. 5 MB) untuk memperbarui foto profil Anda.
+
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <div class="rounded-circle overflow-hidden shadow-xs border bg-white d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; flex-shrink: 0;">
+                                        <?php if ($hasCustomPhoto): ?>
+                                            <img id="formFotoPreview" src="<?= htmlspecialchars(formatPhotoUrl($userProfile['foto'])) ?>" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+                                            <div id="formFotoInitial" class="fw-bold text-primary" style="font-size: 1.5rem; display: none;">
+                                                <?= strtoupper(substr($userProfile['nama'] ?: 'U', 0, 1)) ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <div id="formFotoInitial" class="fw-bold text-primary" style="font-size: 1.5rem;">
+                                                <?= strtoupper(substr($userProfile['nama'] ?: 'U', 0, 1)) ?>
+                                            </div>
+                                            <img id="formFotoPreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="flex-grow-1" style="min-width: 220px;">
+                                        <!-- Box Keep -->
+                                        <div id="fpm_box_keep" class="small text-muted py-1">
+                                            <i class="bi bi-info-circle text-primary me-1"></i> <?= $hasCustomPhoto ? 'Foto profil saat ini tetap dipertahankan.' : 'Saat ini akun menggunakan inisial nama. Pilih Upload Berkas atau Tautan URL untuk memasang foto.' ?>
+                                        </div>
+
+                                        <!-- Box Upload -->
+                                        <div id="fpm_box_upload" class="d-none">
+                                            <input type="file" name="foto_profil" id="inputFotoProfilForm" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImageFile(this, 'formFotoPreview', 'formFotoInitial')">
+                                            <div class="form-text small text-muted mb-0" style="font-size: 0.74rem;">
+                                                Pilih file gambar (JPG, PNG, WEBP, GIF, maks. 5 MB) dari perangkat Anda.
+                                            </div>
+                                        </div>
+
+                                        <!-- Box URL -->
+                                        <div id="fpm_box_url" class="d-none">
+                                            <input type="url" name="form_foto_url" id="inputFotoUrlForm" class="form-control form-control-sm" placeholder="https://drive.google.com/... atau URL gambar web" oninput="previewPhotoUrl(this.value, 'formFotoPreview', 'formFotoInitial')">
+                                            <div class="form-text small text-muted mb-0" style="font-size: 0.74rem;">
+                                                Tempelkan link foto Google Drive atau URL gambar langsung.
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -642,13 +709,38 @@ $hasCustomPhoto = !empty($userProfile['foto']);
                         </div>
                     </div>
 
-                    <!-- Area Dropzone / File Picker -->
-                    <label class="photo-dropzone w-100 d-block mb-3" for="inputModalAvatar">
-                        <i class="bi bi-cloud-arrow-up-fill fs-2 text-primary d-block mb-1"></i>
-                        <span class="fw-semibold text-dark d-block">Klik untuk Telusuri / Pilih Berkas Foto</span>
-                        <span class="text-muted small" style="font-size: 0.76rem;">Format yang didukung: JPG, JPEG, PNG, WEBP, GIF (Maks. 5 MB)</span>
-                        <input type="file" name="foto_avatar" id="inputModalAvatar" class="d-none" accept="image/jpeg,image/png,image/webp,image/gif" required onchange="previewImageFile(this, 'modalPhotoPreview', 'modalPhotoInitial', 'modalPhotoInfo')">
-                    </label>
+                    <!-- Mode Switch Buttons Modal -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary d-block">Pilih Metode Foto</label>
+                        <div class="btn-group w-100 p-1 bg-light rounded-pill border" role="group">
+                            <input type="radio" class="btn-check" name="photo_method" id="photo_method_upload" value="upload" checked onchange="switchModalPhotoMethod('upload')">
+                            <label class="btn btn-sm rounded-pill fw-semibold" for="photo_method_upload"><i class="bi bi-upload me-1"></i> Upload Berkas</label>
+
+                            <input type="radio" class="btn-check" name="photo_method" id="photo_method_url" value="url" onchange="switchModalPhotoMethod('url')">
+                            <label class="btn btn-sm rounded-pill fw-semibold" for="photo_method_url"><i class="bi bi-link-45deg me-1"></i> Tautan URL Foto</label>
+                        </div>
+                    </div>
+
+                    <!-- Mode 1: Upload File -->
+                    <div id="box_modal_photo_upload">
+                        <label class="photo-dropzone w-100 d-block mb-3" for="inputModalAvatar">
+                            <i class="bi bi-cloud-arrow-up-fill fs-2 text-primary d-block mb-1"></i>
+                            <span class="fw-semibold text-dark d-block">Klik untuk Telusuri / Pilih Berkas Foto</span>
+                            <span class="text-muted small" style="font-size: 0.76rem;">Format yang didukung: JPG, JPEG, PNG, WEBP, GIF (Maks. 5 MB)</span>
+                            <input type="file" name="foto_avatar" id="inputModalAvatar" class="d-none" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImageFile(this, 'modalPhotoPreview', 'modalPhotoInitial', 'modalPhotoInfo')">
+                        </label>
+                    </div>
+
+                    <!-- Mode 2: Tautan URL -->
+                    <div id="box_modal_photo_url" class="d-none mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-link-45deg text-primary"></i></span>
+                            <input type="url" name="foto_url" id="inputModalPhotoUrl" class="form-control" placeholder="https://drive.google.com/... atau URL gambar web" oninput="previewPhotoUrl(this.value, 'modalPhotoPreview', 'modalPhotoInitial', 'modalPhotoInfo')">
+                        </div>
+                        <div class="form-text small text-muted mt-1">
+                            <i class="bi bi-info-circle me-1"></i> Mendukung tautan Google Drive publik atau URL langsung berkas foto (.jpg, .png, dll).
+                        </div>
+                    </div>
 
                     <div class="alert alert-info py-2 px-3 rounded-3 small d-flex align-items-start gap-2 mb-0" style="font-size: 0.78rem;">
                         <i class="bi bi-info-circle-fill text-primary flex-shrink-0 mt-0.5"></i>
@@ -736,6 +828,74 @@ function previewImageFile(input, imgId, initialId, infoId) {
             }
         };
         reader.readAsDataURL(file);
+    }
+// Handler Switch Metode Foto Modal
+function switchModalPhotoMethod(method) {
+    const boxUpload = document.getElementById('box_modal_photo_upload');
+    const boxUrl = document.getElementById('box_modal_photo_url');
+    const inputAvatar = document.getElementById('inputModalAvatar');
+    const inputUrl = document.getElementById('inputModalPhotoUrl');
+    const infoElem = document.getElementById('modalPhotoInfo');
+
+    if (method === 'upload') {
+        boxUpload.classList.remove('d-none');
+        boxUrl.classList.add('d-none');
+        if (inputUrl) inputUrl.value = '';
+    } else {
+        boxUpload.classList.add('d-none');
+        boxUrl.classList.remove('d-none');
+        if (inputAvatar) inputAvatar.value = '';
+    }
+}
+
+// Handler Switch Metode Foto Form Identitas Diri
+function switchFormPhotoMethod(method) {
+    const boxKeep = document.getElementById('fpm_box_keep');
+    const boxUpload = document.getElementById('fpm_box_upload');
+    const boxUrl = document.getElementById('fpm_box_url');
+    const inputFoto = document.getElementById('inputFotoProfilForm');
+    const inputUrl = document.getElementById('inputFotoUrlForm');
+
+    if (boxKeep) boxKeep.classList.toggle('d-none', method !== 'keep');
+    if (boxUpload) boxUpload.classList.toggle('d-none', method !== 'upload');
+    if (boxUrl) boxUrl.classList.toggle('d-none', method !== 'url');
+
+    if (method === 'keep') {
+        if (inputFoto) inputFoto.value = '';
+        if (inputUrl) inputUrl.value = '';
+    } else if (method === 'upload') {
+        if (inputUrl) inputUrl.value = '';
+    } else if (method === 'url') {
+        if (inputFoto) inputFoto.value = '';
+    }
+}
+
+// Preview Live Gambar dari Tautan URL (Google Drive / Direct Web Image)
+function previewPhotoUrl(url, imgId, initialId, infoId) {
+    const previewImg = document.getElementById(imgId);
+    const initialDiv = document.getElementById(initialId);
+    const infoElem = infoId ? document.getElementById(infoId) : null;
+
+    if (!url || !url.startsWith('http')) {
+        if (infoElem) infoElem.innerHTML = '<span class="text-muted">Ketik atau tempelkan tautan URL foto</span>';
+        return;
+    }
+
+    let cleanUrl = url;
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+        cleanUrl = 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w500';
+    }
+
+    if (previewImg) {
+        previewImg.src = cleanUrl;
+        previewImg.style.display = 'block';
+    }
+    if (initialDiv) {
+        initialDiv.style.display = 'none';
+    }
+    if (infoElem) {
+        infoElem.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Tautan URL siap digunakan</span>';
     }
 }
 

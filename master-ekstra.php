@@ -10,8 +10,10 @@ if (!hasAccess('master_ekstra')) {
 }
 
 $pdo = getDBConnection();
+$isSuper = isSuperAdmin();
 $ekstraList = getDaftarEkstra();
 $kelasList = getDaftarKelas();
+$ekstraPembinaMap = getEkstraPembinaMap();
 
 // 1. Export Excel / Template / CSV (Dijalankan SEBELUM output header HTML dikirim)
 $isTemplate = isset($_GET['template']) || (isset($_GET['export']) && strtolower($_GET['export']) === 'template');
@@ -23,32 +25,47 @@ if ($isTemplate || (isset($_GET['export']) && in_array(strtolower($_GET['export'
     // Jika unduh template, atau data di tabel masih kosong, sertakan data contoh (dummy) sebagai pedoman pengisian
     if ($isTemplate || empty($rows)) {
         $data = [
-            [1, '0081234567', 'Aditya Pratama Putra', 'L', 'X TKJ 1', 'Pramuka, Futsal'],
-            [2, '0087654321', 'Annisa Nurul Hidayah', 'P', 'X TKJ 1', 'PMR'],
-            [3, '0091122334', 'Bagas Dimas Saputra', 'L', 'XI RPL 2', 'Basket'],
-            [4, '0095566778', 'Cantika Putri Lestari', 'P', 'XI RPL 2', 'Paskibra, Tari'],
-            [5, '0079988776', 'Dimas Arya Nugraha', 'L', 'XII MM 1', 'Robotik']
+            [1, '0081234567', 'Aditya Pratama Putra', 'L', 'X TKJ 1', 'Pramuka, Futsal', 'Pramuka: Belum Ditentukan; Futsal: Susanto'],
+            [2, '0087654321', 'Annisa Nurul Hidayah', 'P', 'X TKJ 1', 'PMR', 'Belum Ditentukan'],
+            [3, '0091122334', 'Bagas Dimas Saputra', 'L', 'XI RPL 2', 'Basket', 'Belum Ditentukan'],
+            [4, '0095566778', 'Cantika Putri Lestari', 'P', 'XI RPL 2', 'Paskibra, Tari', 'Paskibra: Belum Ditentukan; Tari: Belum Ditentukan'],
+            [5, '0079988776', 'Dimas Arya Nugraha', 'L', 'XII MM 1', 'Robotik', 'Belum Ditentukan']
         ];
         $filenamePrefix = 'Template_Import_Data_Ekstra_';
     } else {
         foreach ($rows as $r) {
+            $items = array_values(array_filter(array_map('trim', explode(',', $r['nama_ekstra'] ?? ''))));
+            $pembinaParts = [];
+            foreach ($items as $it) {
+                $pembinas = $ekstraPembinaMap[$it] ?? [];
+                $pembinaStr = !empty($pembinas) ? implode(', ', $pembinas) : 'Belum Ditentukan';
+                if (count($items) > 1) {
+                    $pembinaParts[] = "$it: $pembinaStr";
+                } else {
+                    $pembinaParts[] = $pembinaStr;
+                }
+            }
+            $pembinaText = !empty($pembinaParts) ? implode('; ', $pembinaParts) : '-';
+
             $data[] = [
                 $no++,
                 formatNISN($r['nisn']),
                 $r['nama_murid'],
                 $r['jenis_kelamin'],
                 $r['kelas'],
-                $r['nama_ekstra']
+                $r['nama_ekstra'],
+                $pembinaText
             ];
         }
         $filenamePrefix = 'Data_Murid_Ekstra_';
     }
 
     $format = strtolower($_GET['export'] ?? ($_GET['template'] ?? 'xlsx'));
+    $exportHeaders = ['No', 'NISN', 'Nama Murid', 'Jenis Kelamin', 'Kelas', 'Nama Ekstrakurikuler', 'Guru Pembina'];
     if ($format === 'csv') {
-        exportToExcelCSV($filenamePrefix . date('Ymd_His') . '.csv', ['No', 'NISN', 'Nama Murid', 'Jenis Kelamin', 'Kelas', 'Nama Ekstrakurikuler'], $data);
+        exportToExcelCSV($filenamePrefix . date('Ymd_His') . '.csv', $exportHeaders, $data);
     } else {
-        exportToExcelXLS($filenamePrefix . date('Ymd_His') . '.xlsx', ['No', 'NISN', 'Nama Murid', 'Jenis Kelamin', 'Kelas', 'Nama Ekstrakurikuler'], $data);
+        exportToExcelXLS($filenamePrefix . date('Ymd_His') . '.xlsx', $exportHeaders, $data);
     }
 }
 
@@ -57,6 +74,11 @@ $eligibleStudents = $pdo->query("SELECT * FROM data_murid WHERE status LIKE '%Ek
 
 // 2. Aksi CRUD POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$isSuper) {
+        setFlash('danger', 'Hanya Super Admin yang berhak memodifikasi data siswa ekstrakurikuler.');
+        header("Location: master-ekstra.php");
+        exit;
+    }
     $action = $_POST['action'] ?? '';
 
     if ($action === 'create') {
@@ -67,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $postEkstra = '';
         if (isset($_POST['nama_ekstra']) && is_array($_POST['nama_ekstra'])) {
-            $postEkstra = implode(', ', array_filter(array_map('trim', $_POST['nama_ekstra'])));
+            $postEkstra = implode(', ', array_unique(array_filter(array_map('trim', $_POST['nama_ekstra']))));
         } else {
             $postEkstra = trim($_POST['nama_ekstra'] ?? '');
         }
@@ -90,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $postEkstra = '';
         if (isset($_POST['nama_ekstra']) && is_array($_POST['nama_ekstra'])) {
-            $postEkstra = implode(', ', array_filter(array_map('trim', $_POST['nama_ekstra'])));
+            $postEkstra = implode(', ', array_unique(array_filter(array_map('trim', $_POST['nama_ekstra']))));
         } else {
             $postEkstra = trim($_POST['nama_ekstra'] ?? '');
         }
@@ -218,18 +240,22 @@ $siswaEkstraList = $stmt->fetchAll();
             <p class="text-muted small mb-0">Kelola anggota tiap cabang ekstrakurikuler sekolah.</p>
         </div>
         <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+            <?php if ($isSuper): ?>
             <button class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddEkstra">
                 <i class="bi bi-person-plus-fill me-1"></i> Tambah Anggota Ekstra
             </button>
+            <?php endif; ?>
             <a href="master-ekstra.php?export=xlsx" class="btn btn-outline-success rounded-pill px-3 btn-sm">
                 <i class="bi bi-file-earmark-excel me-1"></i> Export Excel (.xlsx)
             </a>
             <a href="master-ekstra.php?template=xlsx" class="btn btn-outline-secondary rounded-pill px-3 btn-sm" title="Unduh template Excel dengan pedoman data contoh (dummy)">
                 <i class="bi bi-file-earmark-arrow-down me-1"></i> Unduh Template (.xlsx)
             </a>
+            <?php if ($isSuper): ?>
             <button class="btn btn-outline-primary rounded-pill px-3 btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportEkstra">
                 <i class="bi bi-upload me-1"></i> Import Excel
             </button>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -274,13 +300,14 @@ $siswaEkstraList = $stmt->fetchAll();
                         <th>Nama Siswa</th>
                         <th>L/P</th>
                         <th>Kelas</th>
-                        <th>Nama Ekstrakurikuler</th>
+                        <th>Cabang Ekstrakurikuler</th>
+                        <th>Guru Pembina</th>
                         <th class="text-center" style="width: 110px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($siswaEkstraList)): ?>
-                        <tr><td colspan="7" class="text-center text-muted py-4">Data anggota ekstrakurikuler belum ada.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-4">Data anggota ekstrakurikuler belum ada.</td></tr>
                     <?php else: 
                         $no = $offset + 1;
                         foreach ($siswaEkstraList as $se): 
@@ -290,31 +317,67 @@ $siswaEkstraList = $stmt->fetchAll();
                             <td><span class="badge bg-light text-dark border font-monospace"><?= htmlspecialchars($se['nisn']) ?></span></td>
                             <td class="fw-bold text-dark"><?= htmlspecialchars($se['nama_murid']) ?></td>
                             <td>
-                                <span class="badge <?= $se['jenis_kelamin'] === 'L' ? 'bg-primary-subtle text-primary' : 'bg-danger-subtle text-danger' ?>">
-                                    <?= $se['jenis_kelamin'] ?>
+                                <span class="badge <?= $se['jenis_kelamin'] === 'P' ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary' ?>">
+                                    <?= htmlspecialchars($se['jenis_kelamin']) ?>
                                 </span>
                             </td>
                             <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($se['kelas']) ?></span></td>
                             <td>
                                 <?php 
-                                $items = array_map('trim', explode(',', $se['nama_ekstra'] ?? ''));
+                                $items = array_values(array_filter(array_map('trim', explode(',', $se['nama_ekstra'] ?? ''))));
                                 foreach ($items as $it):
-                                    if (empty($it)) continue;
                                 ?>
                                     <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-2 py-1 me-1 mb-1">
                                         <i class="bi bi-award me-1"></i><?= htmlspecialchars($it) ?>
                                     </span>
                                 <?php endforeach; ?>
                             </td>
+                            <td>
+                                <?php if (empty($items)): ?>
+                                    <span class="text-muted small fst-italic">-</span>
+                                <?php elseif (count($items) === 1): 
+                                    $it = $items[0];
+                                    $pembinas = $ekstraPembinaMap[$it] ?? [];
+                                    $isSet = !empty($pembinas);
+                                ?>
+                                    <div class="<?= $isSet ? 'fw-semibold text-primary' : 'text-muted fst-italic' ?> small">
+                                        <i class="bi <?= $isSet ? 'bi-person-badge text-primary' : 'bi-dash-circle text-muted' ?> me-1"></i>
+                                        <?= htmlspecialchars($isSet ? implode(', ', $pembinas) : 'Belum Ditentukan') ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="d-flex flex-column gap-1">
+                                        <?php foreach ($items as $it): 
+                                            $pembinas = $ekstraPembinaMap[$it] ?? [];
+                                            $isSet = !empty($pembinas);
+                                            $pembinaName = $isSet ? implode(', ', $pembinas) : 'Belum Ditentukan';
+                                        ?>
+                                            <div class="small d-flex align-items-center">
+                                                <span class="badge bg-light text-secondary border me-1 fw-semibold" style="font-size: 0.72rem; min-width: 65px;">
+                                                    <?= htmlspecialchars($it) ?>
+                                                </span>
+                                                <span class="<?= $isSet ? 'fw-semibold text-primary' : 'text-muted fst-italic' ?>" style="font-size: 0.82rem;">
+                                                    <i class="bi <?= $isSet ? 'bi-person-badge text-primary' : 'bi-dash-circle text-muted' ?> me-1"></i><?= htmlspecialchars($pembinaName) ?>
+                                                </span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td class="text-center">
-                                <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-0" 
-                                    onclick='editEkstra(<?= json_encode($se) ?>)' title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-0 ms-1" 
-                                    onclick="deleteEkstra(<?= $se['id'] ?>, '<?= addslashes($se['nama_murid']) ?>')" title="Hapus">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <?php if ($isSuper): ?>
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-0" 
+                                        onclick='editEkstra(<?= json_encode($se) ?>)' title="Edit Anggota Ekstra">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-0 ms-1" 
+                                        onclick="deleteEkstra(<?= $se['id'] ?>, '<?= addslashes($se['nama_murid']) ?>')" title="Hapus Anggota Ekstra">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                <?php else: ?>
+                                    <span class="badge bg-light text-muted border py-1 px-2" title="Menu aksi terkunci (Hanya Super Admin)">
+                                        <i class="bi bi-lock-fill text-secondary me-1"></i> Terkunci
+                                    </span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; endif; ?>
@@ -344,6 +407,7 @@ $siswaEkstraList = $stmt->fetchAll();
     </div>
 </main>
 
+<?php if ($isSuper): ?>
 <!-- Modal Tambah Anggota Ekstra -->
 <div class="modal fade" id="modalAddEkstra" tabindex="-1">
     <div class="modal-dialog">
@@ -355,17 +419,32 @@ $siswaEkstraList = $stmt->fetchAll();
             <form method="POST" action="master-ekstra.php">
                 <input type="hidden" name="action" value="create">
                 <div class="modal-body p-4">
-                    <!-- Dropdown Cari Berdasarkan Status Murid dari DataMurid Sesuai PRD -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-primary">Pilih Siswa dari DataMurid (Status: Ekstra)</label>
-                        <select class="form-select" id="selectMuridEkstra" onchange="autoFillEkstraStudent(this)">
-                            <option value="">-- Pilih Siswa atau Isi Manual di Bawah --</option>
-                            <?php foreach ($eligibleStudents as $es): ?>
-                                <option value="<?= htmlspecialchars(json_encode($es)) ?>">
-                                    <?= htmlspecialchars($es['nama_murid']) ?> (NISN: <?= htmlspecialchars($es['nisn']) ?> - <?= htmlspecialchars($es['kelas']) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <!-- Dropdown Cari Berdasarkan Status Murid dari DataMurid (Dapat Diketik Sesuai Permintaan) -->
+                    <div class="mb-3 position-relative" id="comboboxMuridEkstra">
+                        <label class="form-label fw-semibold small text-primary d-flex justify-content-between align-items-center mb-1">
+                            <span><i class="bi bi-person-lines-fill me-1"></i> Pilih Siswa dari DataMurid (Status: Ekstra)</span>
+                            <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.72rem;"><i class="bi bi-keyboard me-1"></i>Bisa Diketik</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="searchMuridEkstraInput" 
+                                   placeholder="-- Ketik Nama Siswa, NISN, atau Kelas --" 
+                                   autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" id="btnToggleMuridEkstra" title="Tampilkan semua siswa">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <button class="btn btn-outline-danger d-none" type="button" id="btnClearMuridEkstra" title="Reset pencarian">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div id="dropdownMuridEkstraList" class="dropdown-menu w-100 shadow-lg border mt-1 p-0 overflow-auto" style="max-height: 250px; z-index: 1060; display: none;">
+                            <!-- Opsi siswa diisi dinamis oleh JS -->
+                        </div>
+                        <div class="form-text small text-muted">
+                            <i class="bi bi-info-circle me-1"></i> Ketik nama atau NISN untuk mencari cepat. Klik pilihan untuk mengisi otomatis data siswa di bawah.
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -395,16 +474,22 @@ $siswaEkstraList = $stmt->fetchAll();
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small d-block">Cabang Ekstrakurikuler (Bisa Pilih Lebih Dari 1)</label>
-                        <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded-3 border">
-                            <?php foreach ($ekstraList as $e): ?>
-                                <div class="form-check me-2">
-                                    <input class="form-check-input add-ekstra-chk" type="checkbox" name="nama_ekstra[]" value="<?= htmlspecialchars($e) ?>" id="add_ek_<?= md5($e) ?>">
-                                    <label class="form-check-label small fw-semibold" for="add_ek_<?= md5($e) ?>"><?= htmlspecialchars($e) ?></label>
-                                </div>
-                            <?php endforeach; ?>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold small text-primary mb-0">
+                                <i class="bi bi-award-fill me-1"></i> Cabang Ekstrakurikuler & Pembina
+                            </label>
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill py-0 px-2.5" onclick="addEkstraRow('add')" style="font-size: 0.78rem;">
+                                <i class="bi bi-plus-circle me-1"></i> Tambah Cabang
+                            </button>
                         </div>
-                        <small class="text-muted">Centang satu atau beberapa kegiatan ekstra yang diikuti.</small>
+                        
+                        <!-- Dynamic Container for Ekstra Rows -->
+                        <div id="containerEkstraRowsAdd" class="d-flex flex-column gap-2 p-2 bg-light rounded-3 border">
+                            <!-- Baris cabang ekstra dimasukkan secara dinamis via JavaScript -->
+                        </div>
+                        <div class="form-text small text-muted mt-1">
+                            <i class="bi bi-info-circle me-1"></i> Pilih cabang ekstra, sistem otomatis menampilkan guru pembinanya. Klik "+ Tambah Cabang" jika siswa mengikuti lebih dari 1 kegiatan.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -450,16 +535,22 @@ $siswaEkstraList = $stmt->fetchAll();
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small d-block">Cabang Ekstrakurikuler (Bisa Pilih Lebih Dari 1)</label>
-                        <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded-3 border">
-                            <?php foreach ($ekstraList as $e): ?>
-                                <div class="form-check me-2">
-                                    <input class="form-check-input edit-ekstra-chk" type="checkbox" name="nama_ekstra[]" value="<?= htmlspecialchars($e) ?>" id="edit_ek_<?= md5($e) ?>">
-                                    <label class="form-check-label small fw-semibold" for="edit_ek_<?= md5($e) ?>"><?= htmlspecialchars($e) ?></label>
-                                </div>
-                            <?php endforeach; ?>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold small text-primary mb-0">
+                                <i class="bi bi-award-fill me-1"></i> Cabang Ekstrakurikuler & Pembina
+                            </label>
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill py-0 px-2.5" onclick="addEkstraRow('edit')" style="font-size: 0.78rem;">
+                                <i class="bi bi-plus-circle me-1"></i> Tambah Cabang
+                            </button>
                         </div>
-                        <small class="text-muted">Centang satu atau beberapa kegiatan ekstra yang diikuti.</small>
+                        
+                        <!-- Dynamic Container for Ekstra Rows -->
+                        <div id="containerEkstraRowsEdit" class="d-flex flex-column gap-2 p-2 bg-light rounded-3 border">
+                            <!-- Baris cabang ekstra dimasukkan secara dinamis via JavaScript -->
+                        </div>
+                        <div class="form-text small text-muted mt-1">
+                            <i class="bi bi-info-circle me-1"></i> Pilih cabang ekstra, sistem otomatis menampilkan guru pembinanya. Klik "+ Tambah Cabang" jika siswa mengikuti lebih dari 1 kegiatan.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -508,16 +599,296 @@ $siswaEkstraList = $stmt->fetchAll();
     <input type="hidden" name="action" value="delete">
     <input type="hidden" name="id" id="delete_e_id">
 </form>
+<?php endif; ?>
 
 <script>
-function autoFillEkstraStudent(selectEl) {
-    if (!selectEl.value) return;
-    const data = JSON.parse(selectEl.value);
+const eligibleStudentsEkstra = <?= json_encode($eligibleStudents, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+}
+
+function autoFillEkstraStudent(data) {
+    if (!data) return;
+    if (data.value !== undefined) {
+        if (!data.value) return;
+        data = JSON.parse(data.value);
+    }
     document.getElementById('add_e_nisn').value = data.nisn || '';
     document.getElementById('add_e_nama').value = data.nama_murid || '';
     document.getElementById('add_e_kelas').value = data.kelas || '';
     document.getElementById('add_e_jk').value = data.jenis_kelamin || 'L';
 }
+
+function initSearchableStudentPicker(config) {
+    const input = document.getElementById(config.inputId);
+    const toggleBtn = document.getElementById(config.toggleBtnId);
+    const clearBtn = document.getElementById(config.clearBtnId);
+    const dropdown = document.getElementById(config.dropdownId);
+    const container = document.getElementById(config.containerId);
+    const students = config.students || [];
+    let activeIndex = -1;
+    let currentList = [];
+
+    if (!input || !dropdown || !container) return;
+
+    function renderDropdown(filterText = '') {
+        const q = filterText.trim().toLowerCase();
+        currentList = students.filter(s => {
+            if (!q) return true;
+            const nm = (s.nama_murid || '').toLowerCase();
+            const nsn = (s.nisn || '').toLowerCase();
+            const kls = (s.kelas || '').toLowerCase();
+            return nm.includes(q) || nsn.includes(q) || kls.includes(q);
+        });
+
+        dropdown.innerHTML = '';
+        activeIndex = -1;
+
+        // Opsi Manual di paling atas
+        const manualBtn = document.createElement('button');
+        manualBtn.type = 'button';
+        manualBtn.className = 'dropdown-item py-2 px-3 border-bottom text-muted fst-italic bg-light text-start w-100';
+        manualBtn.innerHTML = '<i class="bi bi-pencil-square me-2 text-primary"></i>-- Isi Manual di Bawah (Kosongkan Pilihan) --';
+        manualBtn.addEventListener('click', () => {
+            input.value = '';
+            if (clearBtn) clearBtn.classList.add('d-none');
+            if (toggleBtn) toggleBtn.classList.remove('d-none');
+            closeList();
+        });
+        dropdown.appendChild(manualBtn);
+
+        if (currentList.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'p-3 text-center text-muted small';
+            emptyDiv.innerHTML = '<i class="bi bi-search me-1"></i> Tidak ada siswa yang cocok dengan "<b>' + escapeHtml(filterText) + '</b>"';
+            dropdown.appendChild(emptyDiv);
+        } else {
+            currentList.forEach((st) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'dropdown-item py-2 px-3 border-bottom text-wrap text-start w-100';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="fw-bold text-dark"><i class="bi bi-person-fill text-primary me-1"></i>${escapeHtml(st.nama_murid)}</div>
+                        <span class="badge bg-light text-primary border">${escapeHtml(st.kelas)}</span>
+                    </div>
+                    <div class="small text-muted mt-1">
+                        <span class="font-monospace">NISN: ${escapeHtml(st.nisn)}</span> • JK: <span class="badge ${st.jenis_kelamin === 'P' ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary'} px-1">${escapeHtml(st.jenis_kelamin || 'L')}</span>
+                    </div>
+                `;
+                item.addEventListener('click', () => {
+                    input.value = `${st.nama_murid} (NISN: ${st.nisn} - ${st.kelas})`;
+                    if (clearBtn) clearBtn.classList.remove('d-none');
+                    if (toggleBtn) toggleBtn.classList.add('d-none');
+                    closeList();
+                    if (typeof config.onSelect === 'function') {
+                        config.onSelect(st);
+                    }
+                });
+                dropdown.appendChild(item);
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function openList() {
+        const val = input.value;
+        const query = val.includes('(NISN:') ? '' : val;
+        renderDropdown(query);
+    }
+
+    function closeList() {
+        dropdown.style.display = 'none';
+        activeIndex = -1;
+    }
+
+    input.addEventListener('focus', openList);
+    input.addEventListener('input', function() {
+        if (clearBtn) clearBtn.classList.toggle('d-none', !this.value);
+        if (toggleBtn) toggleBtn.classList.toggle('d-none', !!this.value);
+        renderDropdown(this.value);
+    });
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.style.display === 'block') {
+                closeList();
+            } else {
+                input.focus();
+                openList();
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            input.value = '';
+            clearBtn.classList.add('d-none');
+            if (toggleBtn) toggleBtn.classList.remove('d-none');
+            input.focus();
+            openList();
+        });
+    }
+
+    input.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.dropdown-item');
+        if (dropdown.style.display !== 'block') {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                openList();
+                e.preventDefault();
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            updateActive(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            updateActive(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeIndex >= 0 && items[activeIndex]) {
+                items[activeIndex].click();
+            }
+        } else if (e.key === 'Escape') {
+            closeList();
+        }
+    });
+
+    function updateActive(items) {
+        items.forEach((it, i) => {
+            if (i === activeIndex) {
+                it.classList.add('active');
+                it.scrollIntoView({ block: 'nearest' });
+            } else {
+                it.classList.remove('active');
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            closeList();
+        }
+    });
+}
+
+const ekstraOptionsData = <?= json_encode(array_map(function($e) use ($ekstraPembinaMap) {
+    $pembinas = $ekstraPembinaMap[$e] ?? [];
+    $pembinaLbl = !empty($pembinas) ? implode(', ', $pembinas) : 'Belum Ditentukan';
+    return ['name' => $e, 'pembina' => $pembinaLbl];
+}, $ekstraList), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+function createEkstraRowHtml(type, selectedValue = '') {
+    let optionsHtml = '<option value="">-- Pilih Cabang Ekstrakurikuler --</option>';
+    let selectedPembina = 'Pilih cabang ekstra dulu';
+    let isSet = false;
+
+    ekstraOptionsData.forEach(item => {
+        const isSel = (item.name === selectedValue);
+        if (isSel) {
+            selectedPembina = item.pembina;
+            isSet = (item.pembina !== 'Belum Ditentukan');
+        }
+        optionsHtml += `<option value="${escapeHtml(item.name)}" data-pembina="${escapeHtml(item.pembina)}" ${isSel ? 'selected' : ''}>${escapeHtml(item.name)}</option>`;
+    });
+
+    const div = document.createElement('div');
+    div.className = 'ekstra-row-item card border shadow-xs p-2.5 bg-white rounded-3';
+    div.innerHTML = `
+        <div class="row g-2 align-items-center">
+            <div class="col-md-6 col-12">
+                <label class="form-label small text-secondary fw-semibold mb-1" style="font-size: 0.74rem;">Cabang Ekstrakurikuler</label>
+                <select name="nama_ekstra[]" class="form-select form-select-sm select-cabang-ekstra" onchange="handleEkstraChange(this)">
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div class="col-md-5 col-10">
+                <label class="form-label small text-secondary fw-semibold mb-1" style="font-size: 0.74rem;">Guru Pembina</label>
+                <div class="pembina-info-box small bg-light border rounded px-2 py-1 text-truncate" style="min-height: 31px; display: flex; align-items: center;">
+                    <i class="bi bi-person-badge text-primary me-1"></i>
+                    <span class="pembina-text ${isSet ? 'fw-bold text-primary' : 'text-muted fst-italic'}" style="font-size: 0.78rem;">${escapeHtml(selectedPembina)}</span>
+                </div>
+            </div>
+            <div class="col-md-1 col-2 text-end pt-md-3">
+                <button type="button" class="btn btn-outline-danger btn-sm rounded-circle p-1 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;" onclick="removeEkstraRowItem(this)" title="Hapus Cabang">
+                    <i class="bi bi-trash small"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+function addEkstraRow(type, selectedValue = '') {
+    const containerId = type === 'add' ? 'containerEkstraRowsAdd' : 'containerEkstraRowsEdit';
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const rowEl = createEkstraRowHtml(type, selectedValue);
+    container.appendChild(rowEl);
+}
+
+function removeEkstraRowItem(btn) {
+    const row = btn.closest('.ekstra-row-item');
+    if (!row) return;
+    const container = row.parentElement;
+    row.remove();
+
+    // Pastikan minimal ada 1 baris
+    if (container && container.children.length === 0) {
+        const type = container.id === 'containerEkstraRowsAdd' ? 'add' : 'edit';
+        addEkstraRow(type, '');
+    }
+}
+
+function handleEkstraChange(selectEl) {
+    const selectedOpt = selectEl.options[selectEl.selectedIndex];
+    const row = selectEl.closest('.ekstra-row-item');
+    if (!row) return;
+    const pembinaSpan = row.querySelector('.pembina-text');
+    if (!pembinaSpan) return;
+
+    if (!selectEl.value) {
+        pembinaSpan.textContent = 'Pilih cabang ekstra dulu';
+        pembinaSpan.className = 'pembina-text text-muted fst-italic';
+    } else {
+        const pembina = selectedOpt.getAttribute('data-pembina') || 'Belum Ditentukan';
+        pembinaSpan.textContent = pembina;
+        if (pembina !== 'Belum Ditentukan') {
+            pembinaSpan.className = 'pembina-text fw-bold text-primary';
+        } else {
+            pembinaSpan.className = 'pembina-text text-muted fst-italic';
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initSearchableStudentPicker({
+        containerId: 'comboboxMuridEkstra',
+        inputId: 'searchMuridEkstraInput',
+        toggleBtnId: 'btnToggleMuridEkstra',
+        clearBtnId: 'btnClearMuridEkstra',
+        dropdownId: 'dropdownMuridEkstraList',
+        students: eligibleStudentsEkstra,
+        onSelect: autoFillEkstraStudent
+    });
+
+    // Inisialisasi minimal 1 baris di modal Tambah
+    const containerAdd = document.getElementById('containerEkstraRowsAdd');
+    if (containerAdd && containerAdd.children.length === 0) {
+        addEkstraRow('add', '');
+    }
+});
 
 function editEkstra(se) {
     document.getElementById('edit_e_id').value = se.id;
@@ -526,11 +897,19 @@ function editEkstra(se) {
     document.getElementById('edit_e_jk').value = se.jenis_kelamin;
     document.getElementById('edit_e_kelas').value = se.kelas;
 
-    // Reset dan centang checkbox yang sesuai
-    const currentEkstras = (se.nama_ekstra || '').split(',').map(s => s.trim());
-    document.querySelectorAll('.edit-ekstra-chk').forEach(chk => {
-        chk.checked = currentEkstras.includes(chk.value);
-    });
+    // Bersihkan dan masukkan baris ekstra yang dipilih
+    const container = document.getElementById('containerEkstraRowsEdit');
+    if (container) {
+        container.innerHTML = '';
+        const currentEkstras = (se.nama_ekstra || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (currentEkstras.length === 0) {
+            addEkstraRow('edit', '');
+        } else {
+            currentEkstras.forEach(ekstraName => {
+                addEkstraRow('edit', ekstraName);
+            });
+        }
+    }
 
     new bootstrap.Modal(document.getElementById('modalEditEkstra')).show();
 }
