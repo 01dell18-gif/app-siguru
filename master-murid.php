@@ -53,6 +53,11 @@ if ($isTemplate || (isset($_GET['export']) && in_array(strtolower($_GET['export'
 
 // 2. Aksi CRUD POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isSuperAdmin()) {
+        setFlash('danger', 'Hanya Super Admin yang berhak memodifikasi data siswa.');
+        header("Location: master-murid.php");
+        exit;
+    }
     $action = $_POST['action'] ?? '';
 
     if ($action === 'create') {
@@ -271,18 +276,22 @@ $muridList = $stmt->fetchAll();
             <p class="text-muted small mb-0">Daftar induk siswa dengan fitur quick-edit checkbox status terhubung.</p>
         </div>
         <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+            <?php if ($isSuper): ?>
             <button class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddMurid">
                 <i class="bi bi-person-plus-fill me-1"></i> Tambah Siswa
             </button>
+            <?php endif; ?>
             <a href="master-murid.php?<?= http_build_query(array_merge($_GET, ['export' => 'xlsx'])) ?>" class="btn btn-outline-success rounded-pill px-3 btn-sm">
                 <i class="bi bi-file-earmark-excel me-1"></i> Export Excel (.xlsx)
             </a>
             <a href="master-murid.php?template=xlsx" class="btn btn-outline-secondary rounded-pill px-3 btn-sm" title="Unduh template Excel dengan pedoman data contoh (dummy)">
                 <i class="bi bi-file-earmark-arrow-down me-1"></i> Unduh Template (.xlsx)
             </a>
+            <?php if ($isSuper): ?>
             <button class="btn btn-outline-primary rounded-pill px-3 btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportMurid">
                 <i class="bi bi-upload me-1"></i> Import Excel
             </button>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -415,38 +424,44 @@ $muridList = $stmt->fetchAll();
                                     <div class="form-check form-check-inline m-0">
                                         <input class="form-check-input" type="checkbox" id="st_m_<?= $m['id'] ?>"
                                             <?= in_array('Murid', $statusArr) ? 'checked' : '' ?>
-                                            onchange="toggleStudentStatus(this, <?= $m['id'] ?>, 'Murid')">
+                                            <?= $isSuper ? 'onchange="toggleStudentStatus(this, ' . $m['id'] . ', \'Murid\')"' : 'disabled' ?>>
                                         <label class="form-check-label small" for="st_m_<?= $m['id'] ?>">Murid</label>
                                     </div>
                                     <div class="form-check form-check-inline m-0">
                                         <input class="form-check-input" type="checkbox" id="st_gw_<?= $m['id'] ?>"
                                             <?= in_array('Guru Wali', $statusArr) ? 'checked' : '' ?>
-                                            onchange="toggleStudentStatus(this, <?= $m['id'] ?>, 'Guru Wali')">
+                                            <?= $isSuper ? 'onchange="toggleStudentStatus(this, ' . $m['id'] . ', \'Guru Wali\')"' : 'disabled' ?>>
                                         <label class="form-check-label small text-info fw-semibold" for="st_gw_<?= $m['id'] ?>">Guru Wali</label>
                                     </div>
                                     <div class="form-check form-check-inline m-0">
                                         <input class="form-check-input" type="checkbox" id="st_wk_<?= $m['id'] ?>"
                                             <?= in_array('Wali Kelas', $statusArr) ? 'checked' : '' ?>
-                                            onchange="toggleStudentStatus(this, <?= $m['id'] ?>, 'Wali Kelas')">
+                                            <?= $isSuper ? 'onchange="toggleStudentStatus(this, ' . $m['id'] . ', \'Wali Kelas\')"' : 'disabled' ?>>
                                         <label class="form-check-label small text-primary fw-semibold" for="st_wk_<?= $m['id'] ?>">Wali Kelas</label>
                                     </div>
                                     <div class="form-check form-check-inline m-0">
                                         <input class="form-check-input" type="checkbox" id="st_ek_<?= $m['id'] ?>"
                                             <?= in_array('Ekstra', $statusArr) ? 'checked' : '' ?>
-                                            onchange="toggleStudentStatus(this, <?= $m['id'] ?>, 'Ekstra')">
+                                            <?= $isSuper ? 'onchange="toggleStudentStatus(this, ' . $m['id'] . ', \'Ekstra\')"' : 'disabled' ?>>
                                         <label class="form-check-label small text-success fw-semibold" for="st_ek_<?= $m['id'] ?>">Ekstra</label>
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center">
-                                <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-0" 
-                                    onclick='editMurid(<?= json_encode($m) ?>)' title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-0 ms-1" 
-                                    onclick="deleteMurid(<?= $m['id'] ?>, '<?= addslashes($m['nama_murid']) ?>')" title="Hapus">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                            <td class="text-center nowrap">
+                                <?php if ($isSuper): ?>
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-0" 
+                                        onclick='editMurid(<?= json_encode($m) ?>)' title="Edit Siswa">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-0 ms-1" 
+                                        onclick="deleteMurid(<?= $m['id'] ?>, '<?= addslashes($m['nama_murid']) ?>')" title="Hapus Siswa">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                <?php else: ?>
+                                    <span class="badge bg-light text-muted border py-1 px-2" title="Menu aksi terkunci untuk hak akses Anda">
+                                        <i class="bi bi-lock-fill text-secondary me-1"></i> Terkunci
+                                    </span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; endif; ?>

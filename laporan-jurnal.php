@@ -497,10 +497,14 @@ $printUrl = 'print-laporan.php?' . http_build_query([
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold small">Ketuntasan Materi</label>
-                            <select name="ketuntasan_materi" id="edit_jurnal_ketuntasan" class="form-select">
-                                <option value="tuntas">Tuntas</option>
-                                <option value="tidak tuntas">Tidak Tuntas</option>
-                            </select>
+                            <input type="text" name="ketuntasan_materi" id="edit_jurnal_ketuntasan" class="form-control" list="list_edit_ketuntasan" placeholder="Pilih atau ketik manual...">
+                            <datalist id="list_edit_ketuntasan">
+                                <option value="Tuntas">
+                                <option value="Berlanjut">
+                                <option value="Belum Tuntas">
+                                <option value="Remedial">
+                                <option value="-">
+                            </datalist>
                         </div>
 
                         <div class="col-12">

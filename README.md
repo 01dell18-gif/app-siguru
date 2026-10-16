@@ -266,6 +266,28 @@ Ketika Anda berpindah ke komputer atau laptop lain:
     - **Pembersihan Berkas Lama Otomatis (Anti Sampah Penyimpanan)**: Saat bukti baru disimpan atau saat baris laporan dihapus, berkas fisik lama yang tersimpan di `uploads/documents/` secara otomatis dihapus (`unlink`) dari server/disk penyimpanan lokal, menjamin efisiensi ruang penyimpanan dan konsistensi data.
     - **Preservasi Aman**: Jika pengguna dalam mode file tidak memilih berkas baru (hanya mengoreksi teks deskripsi atau tanggal), berkas yang sudah ada sebelumnya tetap dipertahankan secara utuh tanpa terhapus.
 
+16. **Proteksi & Kunci Menu Data Siswa (`master-murid.php`)**:
+    - Untuk pengguna non-Super Admin (Guru Mapel & Wali Kelas), tombol **Tambah Siswa** dan **Import Excel** disembunyikan.
+    - Kolom aksi (Edit & Hapus) terkunci dengan badge `🔒 Terkunci`, dan quick-edit checkbox status dinonaktifkan (`disabled`).
+    - Hanya Super Admin yang memiliki wewenang penuh memodifikasi master data siswa.
+
+17. **Kunci Nama Guru pada Siswa Bimbingan (`master-bimbingan.php`)**:
+    - Filter nama guru pada data siswa bimbingan otomatis terkunci sesuai akun Guru Wali yang login.
+    - Hanya Super Admin yang dapat memilih nama guru wali lain dari dropdown.
+
+18. **Dukungan Input Manual Ketuntasan Materi (`form-jurnal.php` & `laporan-jurnal.php`)**:
+    - Bidang **Ketuntasan Materi** mendukung pengetikan manual secara bebas dengan bantuan auto-suggest HTML5 datalist, serta tombol dropdown pilihan cepat (*Tuntas*, *Berlanjut*, *Belum Tuntas*, *Remedial*, *-*).
+
+19. **Otomatisasi Kelas & Pembatasan Filter Kelas Laporan Wali Kelas (`laporan-wali.php`)**:
+    - Filter kelas otomatis terisi sesuai kelas binaan wali kelas tersebut.
+    - Jika guru tidak mengampu kelas, filter kelas dibiarkan kosong (`(Tidak Mengampu Kelas)`).
+    - Hanya Super Admin yang dapat memilih kelas secara bebas dari dropdown.
+
+20. **Restriksi Cabang Ekstrakurikuler Khusus Pembina (`form-ekstra.php` & `laporan-ekstra.php`)**:
+    - Bidang dan filter Cabang Ekstrakurikuler secara otomatis disaring hanya pada cabang yang dibina oleh guru bersangkutan.
+    - Jika membina 1 cabang: otomatis terisi dan terkunci.
+    - Jika membina lebih dari 1 cabang: disajikan dalam bentuk dropdown pilihan cabang binaan guru tersebut.
+
 ---
 
 ## 📁 Struktur Direktori Proyek

@@ -99,6 +99,82 @@ function getKelasByGuru($namaGuru) {
 }
 
 /**
+ * Ambil kelas di mana guru bertindak sebagai wali kelas
+ */
+function getKelasWaliByGuru($namaGuru) {
+    if (empty($namaGuru)) return [];
+    $pdo = getDBConnection();
+    $classes = [];
+
+    // 1. Dari data_guru.sebagai_wali_kelas
+    try {
+        $stmt = $pdo->prepare("SELECT sebagai_wali_kelas FROM data_guru WHERE nama_guru = ? OR nip = ? LIMIT 1");
+        $stmt->execute([$namaGuru, $namaGuru]);
+        $wk = $stmt->fetchColumn();
+        if (!empty($wk) && $wk !== '-') {
+            foreach (explode(',', $wk) as $k) {
+                $k = trim($k);
+                if (!empty($k) && $k !== '-' && !in_array($k, $classes)) {
+                    $classes[] = $k;
+                }
+            }
+        }
+    } catch (Exception $e) {}
+
+    // 2. Dari riwayat hasil_wali
+    try {
+        $stmtW = $pdo->prepare("SELECT DISTINCT kelas FROM hasil_wali WHERE nama_wali_kelas = ?");
+        $stmtW->execute([$namaGuru]);
+        foreach ($stmtW->fetchAll(PDO::FETCH_COLUMN) as $k) {
+            $k = trim($k);
+            if (!empty($k) && !in_array($k, $classes)) {
+                $classes[] = $k;
+            }
+        }
+    } catch (Exception $e) {}
+
+    return array_values($classes);
+}
+
+/**
+ * Ambil cabang ekstrakurikuler yang dibina oleh guru
+ */
+function getEkstraByGuru($namaGuru) {
+    if (empty($namaGuru)) return [];
+    $pdo = getDBConnection();
+    $ekstra = [];
+
+    // 1. Dari data_guru.pembina_ekstra
+    try {
+        $stmt = $pdo->prepare("SELECT pembina_ekstra FROM data_guru WHERE nama_guru = ? OR nip = ? LIMIT 1");
+        $stmt->execute([$namaGuru, $namaGuru]);
+        $pe = $stmt->fetchColumn();
+        if (!empty($pe) && $pe !== '-') {
+            foreach (explode(',', $pe) as $e) {
+                $e = trim($e);
+                if (!empty($e) && $e !== '-' && !in_array($e, $ekstra)) {
+                    $ekstra[] = $e;
+                }
+            }
+        }
+    } catch (Exception $e) {}
+
+    // 2. Dari riwayat hasil_ekstra
+    try {
+        $stmtH = $pdo->prepare("SELECT DISTINCT kegiatan_ekstra FROM hasil_ekstra WHERE pembina_ekstra = ?");
+        $stmtH->execute([$namaGuru]);
+        foreach ($stmtH->fetchAll(PDO::FETCH_COLUMN) as $e) {
+            $e = trim($e);
+            if (!empty($e) && !in_array($e, $ekstra)) {
+                $ekstra[] = $e;
+            }
+        }
+    } catch (Exception $e) {}
+
+    return array_values($ekstra);
+}
+
+/**
  * Cek apakah role user memiliki akses ke modul tertentu
  * RBAC SiGuru:
  * - Master Data:

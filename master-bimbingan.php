@@ -251,8 +251,17 @@ require_once __DIR__ . '/views/header.php';
 require_once __DIR__ . '/views/sidebar.php';
 
 // 3. Search & Pagination
+$currentUser = currentUser();
+$isSuper = isSuperAdmin();
+
+// Filter Guru Wali: Selain Super Admin, nama guru terkunci sesuai akun login
+if (!$isSuper) {
+    $filterGW = $currentUser['nama'] ?? '';
+} else {
+    $filterGW = trim($_GET['gw'] ?? '');
+}
+
 $search = trim($_GET['q'] ?? '');
-$filterGW = trim($_GET['gw'] ?? '');
 $rawLimit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
 $limit = in_array($rawLimit, [10, 20, 50, 100, 250, 500]) ? $rawLimit : 10;
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -314,12 +323,17 @@ $bimbinganList = $stmt->fetchAll();
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <select name="gw" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Semua Guru Wali</option>
-                    <?php foreach ($guruWaliList as $gw): ?>
-                        <option value="<?= htmlspecialchars($gw) ?>" <?= $filterGW === $gw ? 'selected' : '' ?>><?= htmlspecialchars($gw) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <?php if ($isSuper): ?>
+                    <select name="gw" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Semua Guru Wali</option>
+                        <?php foreach ($guruWaliList as $gw): ?>
+                            <option value="<?= htmlspecialchars($gw) ?>" <?= $filterGW === $gw ? 'selected' : '' ?>><?= htmlspecialchars($gw) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php else: ?>
+                    <input type="text" class="form-control form-control-sm bg-light fw-semibold text-dark" value="🔒 <?= htmlspecialchars($filterGW) ?>" readonly title="Terkunci sesuai akun Guru Wali Anda">
+                    <input type="hidden" name="gw" value="<?= htmlspecialchars($filterGW) ?>">
+                <?php endif; ?>
             </div>
             <div class="col-6 col-md-2">
                 <select name="limit" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -485,11 +499,16 @@ $bimbinganList = $stmt->fetchAll();
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small">Guru Wali Pembimbing</label>
-                            <select name="guru_wali" class="form-select" required>
-                                <?php foreach ($guruWaliList as $gw): ?>
-                                    <option value="<?= htmlspecialchars($gw) ?>"><?= htmlspecialchars($gw) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <?php if ($isSuper): ?>
+                                <select name="guru_wali" class="form-select" required>
+                                    <?php foreach ($guruWaliList as $gw): ?>
+                                        <option value="<?= htmlspecialchars($gw) ?>" <?= $filterGW === $gw ? 'selected' : '' ?>><?= htmlspecialchars($gw) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php else: ?>
+                                <input type="text" class="form-control bg-light fw-semibold text-dark" value="<?= htmlspecialchars($currentUser['nama'] ?? '') ?>" readonly>
+                                <input type="hidden" name="guru_wali" value="<?= htmlspecialchars($currentUser['nama'] ?? '') ?>">
+                            <?php endif; ?>
                         </div>
 
                         <!-- Switch Metode Foto Murid: Upload Berkas ATAU Link Google Drive -->
@@ -609,11 +628,16 @@ $bimbinganList = $stmt->fetchAll();
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small">Guru Wali Pembimbing</label>
-                            <select name="guru_wali" id="edit_b_gw" class="form-select" required>
-                                <?php foreach ($guruWaliList as $gw): ?>
-                                    <option value="<?= htmlspecialchars($gw) ?>"><?= htmlspecialchars($gw) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <?php if ($isSuper): ?>
+                                <select name="guru_wali" id="edit_b_gw" class="form-select" required>
+                                    <?php foreach ($guruWaliList as $gw): ?>
+                                        <option value="<?= htmlspecialchars($gw) ?>"><?= htmlspecialchars($gw) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php else: ?>
+                                <input type="text" class="form-control bg-light fw-semibold text-dark" value="<?= htmlspecialchars($currentUser['nama'] ?? '') ?>" readonly>
+                                <input type="hidden" name="guru_wali" id="edit_b_gw" value="<?= htmlspecialchars($currentUser['nama'] ?? '') ?>">
+                            <?php endif; ?>
                         </div>
 
                         <!-- Switch Metode Edit Foto Murid -->

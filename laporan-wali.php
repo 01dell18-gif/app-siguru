@@ -21,14 +21,28 @@ if (!empty($filterTA) && !in_array($filterTA, $taList)) {
     array_unshift($taList, $filterTA);
 }
 $filterSemester = $_GET['semester'] ?? $settings['semester'];
-$filterKelas = $_GET['kelas'] ?? '';
-
 // Filter Nama Guru / Wali: Super Admin & Pelihat dapat memilih guru, selain itu terkunci
 $currentUser = currentUser();
-if (!isSuperAdmin() && !isPelihat()) {
+$isSuper = isSuperAdmin();
+$isViewer = isPelihat();
+
+if (!$isSuper && !$isViewer) {
     $filterGuru = $currentUser['nama'] ?? '';
 } else {
     $filterGuru = $_GET['guru'] ?? '';
+}
+
+// Filter Kelas: Otomatis terisi sesuai gurunya, jika tidak mengampu kelas biarkan kosong.
+// Hanya hak akses Super Admin yang dapat memilih kelas.
+if (!$isSuper) {
+    if (!empty($filterGuru)) {
+        $waliClasses = getKelasWaliByGuru($filterGuru);
+        $filterKelas = !empty($waliClasses) ? $waliClasses[0] : '';
+    } else {
+        $filterKelas = '';
+    }
+} else {
+    $filterKelas = $_GET['kelas'] ?? '';
 }
 
 // Export CSV / Excel (Dijalankan SEBELUM output header HTML)
@@ -237,12 +251,22 @@ $printUrl = 'print-laporan.php?' . http_build_query([
             </div>
             <div class="col-md-2 col-6">
                 <label class="form-label small text-muted mb-0">Kelas</label>
-                <select name="kelas" class="form-select form-select-sm">
-                    <option value="">Semua Kelas</option>
-                    <?php foreach ($kelasList as $k): ?>
-                        <option value="<?= htmlspecialchars($k) ?>" <?= $filterKelas === $k ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <?php if ($isSuper): ?>
+                    <select name="kelas" class="form-select form-select-sm">
+                        <option value="">Semua Kelas</option>
+                        <?php foreach ($kelasList as $k): ?>
+                            <option value="<?= htmlspecialchars($k) ?>" <?= $filterKelas === $k ? 'selected' : '' ?>><?= htmlspecialchars($k) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php else: ?>
+                    <?php if (!empty($filterKelas)): ?>
+                        <input type="text" class="form-control form-control-sm bg-light fw-semibold text-dark" value="🔒 <?= htmlspecialchars($filterKelas) ?>" readonly title="Terkunci sesuai kelas binaan Anda">
+                        <input type="hidden" name="kelas" value="<?= htmlspecialchars($filterKelas) ?>">
+                    <?php else: ?>
+                        <input type="text" class="form-control form-control-sm bg-light text-muted" value="(Tidak Mengampu Kelas)" readonly title="Tidak mengampu kelas">
+                        <input type="hidden" name="kelas" value="">
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
             <div class="col-md-4 col-6">
                 <label class="form-label small text-muted mb-0">Nama Guru / Wali</label>

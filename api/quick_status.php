@@ -2,7 +2,13 @@
 // api/quick_status.php - Update status terhubung siswa & sinkronisasi otomatis ke database
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../config/helper.php';
+
+if (!isSuperAdmin()) {
+    echo json_encode(['success' => false, 'message' => 'Hanya Super Admin yang berhak mengubah status']);
+    exit;
+}
 
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true);

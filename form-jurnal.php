@@ -230,12 +230,30 @@ require_once __DIR__ . '/views/sidebar.php';
 
                 <!-- 8. Ketuntasan Materi & Keterangan -->
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold small text-secondary">Ketuntasan Materi</label>
-                    <select name="ketuntasan_materi" class="form-select">
-                        <option value="tuntas">Tuntas</option>
-                        <option value="berlanjut">Berlanjut</option>
-                        <option value="-">-</option>
-                    </select>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-semibold small text-secondary mb-0">Ketuntasan Materi</label>
+                        <span class="badge bg-light text-primary border small" style="font-size: 0.7rem;"><i class="bi bi-pencil-fill me-1"></i>Bisa Input Manual</span>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" name="ketuntasan_materi" id="ketuntasan_materi_input" class="form-control" list="list_ketuntasan" placeholder="Pilih atau ketik manual..." value="<?= htmlspecialchars($_POST['ketuntasan_materi'] ?? 'Tuntas') ?>" required>
+                        <datalist id="list_ketuntasan">
+                            <option value="Tuntas">
+                            <option value="Berlanjut">
+                            <option value="Belum Tuntas">
+                            <option value="Remedial">
+                            <option value="-">
+                        </datalist>
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Pilihan Cepat">
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><a class="dropdown-item small" href="javascript:void(0)" onclick="selectKetuntasanQuick('Tuntas')"><i class="bi bi-check2-circle text-success me-1"></i> Tuntas</a></li>
+                            <li><a class="dropdown-item small" href="javascript:void(0)" onclick="selectKetuntasanQuick('Berlanjut')"><i class="bi bi-arrow-repeat text-warning me-1"></i> Berlanjut</a></li>
+                            <li><a class="dropdown-item small" href="javascript:void(0)" onclick="selectKetuntasanQuick('Belum Tuntas')"><i class="bi bi-x-circle text-danger me-1"></i> Belum Tuntas</a></li>
+                            <li><a class="dropdown-item small" href="javascript:void(0)" onclick="selectKetuntasanQuick('Remedial')"><i class="bi bi-exclamation-triangle text-info me-1"></i> Remedial</a></li>
+                            <li><a class="dropdown-item small" href="javascript:void(0)" onclick="selectKetuntasanQuick('-')"><i class="bi bi-dash me-1"></i> -</a></li>
+                        </ul>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;">Dapat memilih opsi cepat atau langsung mengetik teks manual.</small>
                 </div>
                 <div class="col-md-8">
                     <label class="form-label fw-semibold small text-secondary">Keterangan Ketuntasan</label>
@@ -441,6 +459,14 @@ function refreshMeetingNo() {
             }
         })
         .catch(e => console.error(e));
+}
+
+function selectKetuntasanQuick(val) {
+    const input = document.getElementById('ketuntasan_materi_input');
+    if (input) {
+        input.value = val;
+        input.focus();
+    }
 }
 </script>
 

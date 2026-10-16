@@ -73,23 +73,30 @@ SIGURU dirancang untuk menggantikan pencatatan administrasi sekolah konvensional
 | --- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Dashboard Utama** | ✅ Penuh | ✅ Personal | ✅ Personal | ✅ Personal | ✅ Personal | ✅ Ringkasan |
 | **Data Guru (`master-guru.php`)** | ✅ CRUD | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Data Siswa (`master-murid.php`)** | ✅ CRUD | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Murid Guru Wali (`master-bimbingan.php`)** | ✅ CRUD | ❌ | ❌ | ✅ CRUD Binaan | ❌ | ❌ |
-| **Murid Ekstra (`master-ekstra.php`)** | ✅ CRUD | ❌ | ❌ | ❌ | ✅ CRUD Ekstra | ❌ |
-| **Form Presensi (`form-absen.php`)** | ✅ Input | ✅ Input | ✅ Input | ❌ | ❌ | ❌ |
-| **Form Jurnal KBM (`form-jurnal.php`)** | ✅ Input | ✅ Input | ❌ | ❌ | ❌ | ❌ |
+| **Data Siswa (`master-murid.php`)** | ✅ Full CRUD | 👁️ Lihat (Aksi Terkunci) | 👁️ Lihat (Aksi Terkunci) | ❌ | ❌ | ❌ |
+| **Murid Guru Wali (`master-bimbingan.php`)** | ✅ CRUD Semua | ❌ | ❌ | ✅ CRUD Binaan (Guru Terkunci) | ❌ | ❌ |
+| **Murid Ekstra (`master-ekstra.php`)** | ✅ CRUD Semua | ❌ | ❌ | ❌ | ✅ CRUD Ekstra Binaan | ❌ |
+| **Form Presensi (`form-absen.php`)** | ✅ Input | ✅ Input | ❌ | ❌ | ❌ | ❌ |
+| **Form Jurnal KBM (`form-jurnal.php`)** | ✅ Input (Manual/Preset) | ✅ Input (Manual/Preset) | ❌ | ❌ | ❌ | ❌ |
 | **Form Bimbingan (`form-guruwali.php`)** | ✅ Input | ❌ | ❌ | ✅ Input | ❌ | ❌ |
 | **Form Wali Kelas (`form-wali.php`)** | ✅ Input | ❌ | ✅ Input | ❌ | ❌ | ❌ |
-| **Form Ekstrakurikuler (`form-ekstra.php`)** | ✅ Input | ❌ | ❌ | ❌ | ✅ Input | ❌ |
-| **Laporan Presensi (`laporan-absen.php`)** | ✅ CRUD Laporan | ✅ Edit Milik Sendiri | ✅ Edit Kelasnya | ❌ | ❌ | 👁️ Hanya Lihat |
+| **Form Ekstrakurikuler (`form-ekstra.php`)** | ✅ Input Semua Ekstra | ❌ | ❌ | ❌ | ✅ Input Cabang Binaan | ❌ |
+| **Laporan Presensi (`laporan-absen.php`)** | ✅ CRUD Laporan | ✅ Edit Milik Sendiri | ❌ | ❌ | ❌ | 👁️ Hanya Lihat |
 | **Laporan Jurnal (`laporan-jurnal.php`)** | ✅ CRUD Laporan | ✅ Edit Milik Sendiri | ❌ | ❌ | ❌ | 👁️ Hanya Lihat |
 | **Laporan Bimbingan (`laporan-guruwali.php`)** | ✅ CRUD Laporan | ❌ | ❌ | ✅ Edit Milik Sendiri | ❌ | 👁️ Hanya Lihat |
-| **Laporan Wali Kelas (`laporan-wali.php`)** | ✅ CRUD Laporan | ❌ | ✅ Edit Kelasnya | ❌ | ❌ | 👁️ Hanya Lihat |
-| **Laporan Ekstra (`laporan-ekstra.php`)** | ✅ CRUD Laporan | ❌ | ❌ | ❌ | ✅ Edit Ekstranya | 👁️ Hanya Lihat |
+| **Laporan Wali Kelas (`laporan-wali.php`)** | ✅ CRUD Laporan (Bebas Kelas) | ❌ | ✅ Edit Kelas Binaan (Auto-Kelas) | ❌ | ❌ | 👁️ Hanya Lihat |
+| **Laporan Ekstra (`laporan-ekstra.php`)** | ✅ CRUD Laporan (Semua Cabang) | ❌ | ❌ | ❌ | ✅ Edit Ekstra Binaan | 👁️ Hanya Lihat |
 | **Pengaturan Sistem (`pengaturan.php`)** | ✅ Penuh | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Manajemen User (`user-management.php`)** | ✅ Penuh | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-> **Aturan Keamanan Ownership**: Pada seluruh tabel laporan, jika pengguna bukan Super Admin dan bukan guru yang menginput data tersebut, tombol Edit & Hapus disembunyikan dan digantikan dengan label `🔒 Terkunci`. Request POST update/delete di sisi server diverifikasi dengan fungsi `canManageReport($type, $record)`.
+> **Aturan Keamanan & Hak Akses Ketat (RBAC Extended)**:
+> 1. **Data Siswa (`master-murid.php`)**: Untuk hak akses selain Super Admin (Guru & Wali Kelas), tombol *Tambah Siswa* dan *Import Excel* disembunyikan, kolom aksi berstatus `🔒 Terkunci`, serta quick-edit checkbox status terhubung dinonaktifkan (`disabled`). Hanya Super Admin yang berhak memodifikasi data siswa.
+> 2. **Data Siswa Bimbingan (`master-bimbingan.php`)**: Filter nama guru terkunci sesuai akun Guru Wali yang login. Hanya Super Admin yang dapat memilih guru wali lain dari dropdown.
+> 3. **Formulir Jurnal Mengajar (`form-jurnal.php`)**: Bidang *Ketuntasan Materi* mendukung **input manual bebas** (melalui text input + HTML5 datalist) serta opsi cepat melalui dropdown preset (*Tuntas, Berlanjut, Belum Tuntas, Remedial, -*).
+> 4. **Laporan Kegiatan Wali Kelas (`laporan-wali.php`)**: Filter kelas otomatis terisi sesuai kelas binaan wali kelas tersebut. Jika tidak mengampu kelas, filter dikosongkan. **Hanya Super Admin yang dapat memilih kelas secara bebas** dari dropdown.
+> 5. **Formulir & Laporan Ekstrakurikuler (`form-ekstra.php` & `laporan-ekstra.php`)**: Bidang/Filter *Cabang Ekstrakurikuler* hanya menampilkan cabang yang dibina guru tersebut. Jika guru membina 1 cabang, langsung terisi otomatis dan terkunci; jika > 1 cabang, disajikan dalam dropdown cabang binaan guru tersebut.
+> 6. **Hak Akses Pelihat (Viewer)**: Hanya menampilkan grup menu Laporan Hasil. Pelihat dapat memfilter nama guru pada laporan, namun seluruh menu Aksi berstatus `🔒 Terkunci`.
+> 7. **Dukungan Multi-Role**: Pengguna dengan beberapa peran (contoh: `Guru, Wali Kelas, Guru Wali`) mendapatkan akses gabungan (*union*) dari peran-peran tersebut tanpa menampilkan menu yang tidak diizinkan.
 
 ---
 

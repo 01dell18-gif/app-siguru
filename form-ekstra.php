@@ -19,9 +19,20 @@ $ekstraList = getDaftarEkstra();
 $guruList = $pdo->query("SELECT nama_guru FROM data_guru ORDER BY nama_guru ASC")->fetchAll(PDO::FETCH_COLUMN);
 
 // Default nilai form & hak akses guru
-$defaultGuru = isSuperAdmin() ? ($guruList[0] ?? $user['nama']) : $user['nama'];
-$selectedGuru = isSuperAdmin() ? ($_GET['guru'] ?? $defaultGuru) : $user['nama'];
-$selectedEkstra = $_GET['ekstra'] ?? ($ekstraList[0] ?? 'Pramuka');
+$isSuper = isSuperAdmin();
+$defaultGuru = $isSuper ? ($guruList[0] ?? $user['nama']) : $user['nama'];
+$selectedGuru = $isSuper ? ($_GET['guru'] ?? $defaultGuru) : $user['nama'];
+
+// Ambil cabang ekstrakurikuler khusus guru ini
+$guruEkstraList = getEkstraByGuru($selectedGuru);
+if (!empty($guruEkstraList)) {
+    $reqEkstra = $_GET['ekstra'] ?? '';
+    $selectedEkstra = (!empty($reqEkstra) && in_array($reqEkstra, $guruEkstraList)) ? $reqEkstra : $guruEkstraList[0];
+} elseif ($isSuper) {
+    $selectedEkstra = $_GET['ekstra'] ?? ($ekstraList[0] ?? 'Pramuka');
+} else {
+    $selectedEkstra = '';
+}
 
 $tanggalHariIni = date('Y-m-d');
 $taList = getDaftarTahunAjaran();
@@ -103,8 +114,8 @@ require_once __DIR__ . '/views/sidebar.php';
                 <!-- 1. Nama Guru / Pembina Ekstra -->
                 <div class="col-md-6">
                     <label class="form-label fw-semibold small text-secondary">Nama Guru / Pembina Ekstrakurikuler</label>
-                    <?php if (isSuperAdmin()): ?>
-                        <select name="pembina_ekstra" class="form-select" onchange="window.location.href='form-ekstra.php?guru=' + encodeURIComponent(this.value) + '&ekstra=<?= urlencode($selectedEkstra) ?>'">
+                    <?php if ($isSuper): ?>
+                        <select name="pembina_ekstra" class="form-select" onchange="window.location.href='form-ekstra.php?guru=' + encodeURIComponent(this.value)">
                             <?php foreach ($guruList as $g): ?>
                                 <option value="<?= htmlspecialchars($g) ?>" <?= ($selectedGuru === $g) ? 'selected' : '' ?>><?= htmlspecialchars($g) ?></option>
                             <?php endforeach; ?>
@@ -120,14 +131,32 @@ require_once __DIR__ . '/views/sidebar.php';
                     <input type="date" name="tanggal" class="form-control" value="<?= htmlspecialchars($tanggalHariIni) ?>" required>
                 </div>
 
-                <!-- 3. Cabang Ekstra -->
+                <!-- 3. Cabang Ekstra (Sesuai Cabang Guru: 1 = Langsung Terisi, >1 = Dropdown) -->
                 <div class="col-md-4">
                     <label class="form-label fw-semibold small text-secondary">Cabang Ekstrakurikuler</label>
-                    <select name="nama_ekstra" class="form-select" onchange="window.location.href='form-ekstra.php?ekstra=' + encodeURIComponent(this.value) + '<?= isSuperAdmin() ? "&guru=" . urlencode($selectedGuru) : "" ?>'">
-                        <?php foreach ($ekstraList as $e): ?>
-                            <option value="<?= htmlspecialchars($e) ?>" <?= $selectedEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <?php if (!empty($guruEkstraList)): ?>
+                        <?php if (count($guruEkstraList) === 1): ?>
+                            <input type="text" class="form-control bg-light fw-semibold text-dark" value="🔒 <?= htmlspecialchars($guruEkstraList[0]) ?>" readonly title="Terkunci sesuai cabang ekstrakurikuler yang Anda bina">
+                            <input type="hidden" name="nama_ekstra" value="<?= htmlspecialchars($guruEkstraList[0]) ?>">
+                        <?php else: ?>
+                            <select name="nama_ekstra" class="form-select" onchange="window.location.href='form-ekstra.php?ekstra=' + encodeURIComponent(this.value) + '<?= $isSuper ? "&guru=" . urlencode($selectedGuru) : "" ?>'">
+                                <?php foreach ($guruEkstraList as $e): ?>
+                                    <option value="<?= htmlspecialchars($e) ?>" <?= $selectedEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <?php if ($isSuper): ?>
+                            <select name="nama_ekstra" class="form-select" onchange="window.location.href='form-ekstra.php?ekstra=' + encodeURIComponent(this.value) + '&guru=<?= urlencode($selectedGuru) ?>'">
+                                <?php foreach ($ekstraList as $e): ?>
+                                    <option value="<?= htmlspecialchars($e) ?>" <?= $selectedEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php else: ?>
+                            <input type="text" class="form-control bg-light text-muted" value="(Tidak Mengampu Ekstrakurikuler)" readonly title="Anda tidak tercatat mengampu cabang ekstrakurikuler">
+                            <input type="hidden" name="nama_ekstra" value="">
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
 
                 <!-- 4. Tahun Ajaran -->

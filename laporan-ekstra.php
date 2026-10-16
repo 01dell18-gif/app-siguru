@@ -21,14 +21,34 @@ if (!empty($filterTA) && !in_array($filterTA, $taList)) {
     array_unshift($taList, $filterTA);
 }
 $filterSemester = $_GET['semester'] ?? $settings['semester'];
-$filterEkstra = $_GET['ekstra'] ?? '';
-
 // Filter Nama Guru / Pembina: Super Admin & Pelihat dapat memilih guru, selain itu terkunci
 $currentUser = currentUser();
-if (!isSuperAdmin() && !isPelihat()) {
+$isSuper = isSuperAdmin();
+$isViewer = isPelihat();
+
+if (!$isSuper && !$isViewer) {
     $filterGuru = $currentUser['nama'] ?? '';
 } else {
     $filterGuru = $_GET['guru'] ?? '';
+}
+
+// Ambil cabang ekstrakurikuler guru terpilih / yang sedang login
+$guruEkstraList = !empty($filterGuru) ? getEkstraByGuru($filterGuru) : [];
+
+// Filter Cabang Ekstra:
+if (!$isSuper && !$isViewer) {
+    // Untuk Pembina Ekstra: hanya menampilkan cabang guru tersebut
+    if (count($guruEkstraList) === 1) {
+        $filterEkstra = $guruEkstraList[0];
+    } elseif (count($guruEkstraList) > 1) {
+        $reqEkstra = $_GET['ekstra'] ?? '';
+        $filterEkstra = (!empty($reqEkstra) && in_array($reqEkstra, $guruEkstraList)) ? $reqEkstra : '';
+    } else {
+        $filterEkstra = '';
+    }
+} else {
+    // Super Admin & Pelihat: jika guru dipilih dan punya cabang, sesuaikan; jika tidak, bebas pilih
+    $filterEkstra = $_GET['ekstra'] ?? '';
 }
 
 // Export CSV / Excel (Dijalankan SEBELUM output header HTML)
@@ -241,12 +261,32 @@ $printUrl = 'print-laporan.php?' . http_build_query([
             </div>
             <div class="col-md-3 col-6">
                 <label class="form-label small text-muted mb-0">Cabang Ekstrakurikuler</label>
-                <select name="ekstra" class="form-select form-select-sm">
-                    <option value="">Semua Ekstra</option>
-                    <?php foreach ($ekstraList as $e): ?>
-                        <option value="<?= htmlspecialchars($e) ?>" <?= $filterEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <?php if (!$isSuper && !$isViewer): ?>
+                    <?php if (count($guruEkstraList) === 1): ?>
+                        <input type="text" class="form-control form-control-sm bg-light fw-semibold text-dark" value="🔒 <?= htmlspecialchars($guruEkstraList[0]) ?>" readonly title="Terkunci sesuai cabang ekstrakurikuler yang Anda bina">
+                        <input type="hidden" name="ekstra" value="<?= htmlspecialchars($guruEkstraList[0]) ?>">
+                    <?php elseif (count($guruEkstraList) > 1): ?>
+                        <select name="ekstra" class="form-select form-select-sm">
+                            <option value="">Semua Ekstra Binaan</option>
+                            <?php foreach ($guruEkstraList as $e): ?>
+                                <option value="<?= htmlspecialchars($e) ?>" <?= $filterEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php else: ?>
+                        <input type="text" class="form-control form-control-sm bg-light text-muted" value="(Tidak Mengampu Ekstrakurikuler)" readonly title="Anda tidak tercatat membina ekstrakurikuler">
+                        <input type="hidden" name="ekstra" value="">
+                    <?php endif; ?>
+                <?php else: ?>
+                    <?php 
+                        $displayEkstraOptions = (!empty($filterGuru) && !empty($guruEkstraList)) ? $guruEkstraList : $ekstraList; 
+                    ?>
+                    <select name="ekstra" class="form-select form-select-sm">
+                        <option value=""><?= (!empty($filterGuru) && !empty($guruEkstraList)) ? 'Semua Ekstra Pembina Ini' : 'Semua Ekstra' ?></option>
+                        <?php foreach ($displayEkstraOptions as $e): ?>
+                            <option value="<?= htmlspecialchars($e) ?>" <?= $filterEkstra === $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
             </div>
             <div class="col-md-3 col-6">
                 <label class="form-label small text-muted mb-0">Nama Guru / Pembina</label>
